@@ -16,24 +16,31 @@ class ModelManager:
         safe_name = repo_id.replace("/", "__")
         return os.path.join(MODELS_DIR, safe_name)
 
-    def download_model(self, repo_id: str) -> str:
+    def download_model(self, repo_id: str, token: Optional[str] = None) -> str:
+        """
+        Scarica il modello da Hugging Face se non esiste già in locale.
+        Usa il token passato dalla richiesta, se presente; altrimenti HF_TOKEN da config.
+        """
         local_dir = self._get_model_path(repo_id)
 
         if not os.path.exists(local_dir):
             snapshot_download(
                 repo_id,
                 local_dir=local_dir,
-                token=HF_TOKEN,
-                local_files_only=False
+                token=token or HF_TOKEN,
+                local_files_only=False,
             )
 
         return local_dir
 
-    def load_model(self, repo_id: str):
+    def load_model(self, repo_id: str, token: Optional[str] = None):
+        """
+        Carica (e se serve scarica) il modello e crea la pipeline di text-generation.
+        """
         if repo_id in self._pipelines:
             return self._pipelines[repo_id]
 
-        local_dir = self.download_model(repo_id)
+        local_dir = self.download_model(repo_id, token=token)
 
         tokenizer = AutoTokenizer.from_pretrained(local_dir)
         model = AutoModelForCausalLM.from_pretrained(local_dir)
@@ -42,7 +49,7 @@ class ModelManager:
             "text-generation",
             model=model,
             tokenizer=tokenizer,
-            device_map="auto" if model.device.type != "cpu" else None
+            device_map="auto" if model.device.type != "cpu" else None,
         )
 
         self._pipelines[repo_id] = pipe
@@ -56,8 +63,19 @@ class ModelManager:
                 models.append(name.replace("__", "/"))
         return models
 
-    def generate(self, repo_id: str, prompt: str, max_tokens: int = 256, temperature: float = 0.7) -> str:
-        pipe = self.load_model(repo_id)
+    def generate(
+        self,
+        repo_id: str,
+        prompt: str,
+        max_tokens: int = 256,
+        temperature: float = 0.7,
+        token: Optional[str] = None,
+    ) -> str:
+        """
+        Genera testo usando il modello richiesto.
+        Il token è usato solo per eventuali primi download.
+        """
+        pipe = self.load_model(repo_id, token=token)
         out = pipe(
             prompt,
             max_new_tokens=max_tokens,
@@ -65,7 +83,6 @@ class ModelManager:
             temperature=temperature,
             pad_token_id=pipe.tokenizer.eos_token_id,
         )
-        # Transformers text-generation di solito ritorna list[{"generated_text": "..."}]
         return out[0]["generated_text"][len(prompt):].strip()
 
 
