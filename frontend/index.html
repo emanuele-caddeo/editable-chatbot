@@ -9,11 +9,49 @@
   <div class="page">
     <header class="header">
       <div class="logo">🧠 Editable Chatbot</div>
-      <div class="model-select">
-        <label for="model-list">Modello:</label>
-        <select id="model-list"></select>
-        <input id="model-id-input" type="text" placeholder="repo_id HuggingFace (es: microsoft/phi-2)" />
-        <button id="download-btn">Download / Use</button>
+
+      <div class="header-actions">
+        <div id="div-model-select" class="model-select">
+          <label for="model-list">Modello:</label>
+          <select id="model-list"></select>
+          <input
+            id="model-id-input"
+            type="text"
+            placeholder="repo_id HuggingFace (es: microsoft/phi-2)"
+          />
+          <button id="download-btn">Scarica / Usa</button>
+        </div>
+
+        <!-- Bottone icona per token HF -->
+        <button
+          id="hf-token-btn"
+          class="icon-btn"
+          title="Imposta Hugging Face token"
+        >
+          🔑
+        </button>
+
+        <!-- Pannellino token HF -->
+        <div id="hf-token-panel" class="hf-token-panel">
+          <div class="hf-token-header">
+            <span>Hugging Face Token</span>
+            <button id="hf-token-close" class="icon-btn small" title="Chiudi">
+              ✕
+            </button>
+          </div>
+          <input
+            id="hf-token-input"
+            type="password"
+            placeholder="hf_xxxxxxxxxxxxxxxxx"
+          />
+          <div class="hf-token-actions">
+            <button id="hf-token-save" class="primary-btn">Salva</button>
+            <button id="hf-token-clear" class="secondary-btn">Rimuovi</button>
+          </div>
+          <p class="hf-token-hint">
+            Il token viene salvato solo nel tuo browser (localStorage).
+          </p>
+        </div>
       </div>
     </header>
 

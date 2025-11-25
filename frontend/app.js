@@ -6,9 +6,70 @@ const sendBtn = document.getElementById("send-btn");
 const modelList = document.getElementById("model-list");
 const modelIdInput = document.getElementById("model-id-input");
 const downloadBtn = document.getElementById("download-btn");
+const inputWrapper = document.querySelector(".input-wrapper");
+
+// elementi token HF
+const hfTokenBtn = document.getElementById("hf-token-btn");
+const hfTokenPanel = document.getElementById("hf-token-panel");
+const hfTokenInput = document.getElementById("hf-token-input");
+const hfTokenSave = document.getElementById("hf-token-save");
+const hfTokenClear = document.getElementById("hf-token-clear");
+const hfTokenClose = document.getElementById("hf-token-close");
 
 let currentModel = null;
 let messages = [];
+
+/**
+ * HF TOKEN HELPERS
+ */
+function getHfToken() {
+  return localStorage.getItem("hf_token") || "";
+}
+
+function setHfToken(token) {
+  if (token) {
+    localStorage.setItem("hf_token", token);
+    hfTokenBtn.classList.add("active");
+  } else {
+    localStorage.removeItem("hf_token");
+    hfTokenBtn.classList.remove("active");
+  }
+}
+
+function toggleHfTokenPanel(forceState = null) {
+  const isOpen = hfTokenPanel.classList.contains("open");
+  const nextState = forceState === null ? !isOpen : forceState;
+  if (nextState) {
+    hfTokenPanel.classList.add("open");
+  } else {
+    hfTokenPanel.classList.remove("open");
+  }
+}
+
+/**
+ * Ridimensiona l'input-wrapper e la textarea in base al contenuto.
+ */
+function resizeInputWrapper() {
+  const lineHeight = 25;
+  const computed = getComputedStyle(userInput);
+  const maxHeight = parseInt(computed.maxHeight, 10) || 120;
+
+  userInput.style.height = "auto";
+  const scrollH = userInput.scrollHeight;
+
+  let numLines = Math.ceil(scrollH / lineHeight);
+  if (numLines < 1) numLines = 1;
+
+  let newHeight = numLines * lineHeight;
+  if (newHeight > maxHeight) {
+    newHeight = maxHeight;
+  }
+
+  userInput.style.height = newHeight + "px";
+
+  const extraPadding = 20;
+  inputWrapper.style.height = newHeight + extraPadding + "px";
+}
 
 function addMessage(role, content) {
   const div = document.createElement("div");
@@ -50,10 +111,16 @@ downloadBtn.addEventListener("click", async () => {
   downloadBtn.textContent = "Scarico...";
 
   try {
+    const body = { repo_id: repoId };
+    const token = getHfToken();
+    if (token) {
+      body.hf_token = token; // verrà usato dal backend
+    }
+
     const res = await fetch(`${API_BASE}/api/models/download`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repo_id: repoId }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -83,6 +150,7 @@ async function sendMessage() {
   addMessage("user", text);
   messages.push({ role: "user", content: text });
   userInput.value = "";
+  resizeInputWrapper();
 
   addMessage("assistant", "⏳ Sto pensando...");
   const thinkingBubble = chatContainer.lastChild;
@@ -123,5 +191,45 @@ userInput.addEventListener("keydown", (e) => {
   }
 });
 
+userInput.addEventListener("input", resizeInputWrapper);
+
+/**
+ * Eventi pannello token HF
+ */
+hfTokenBtn.addEventListener("click", () => {
+  toggleHfTokenPanel();
+});
+
+hfTokenClose.addEventListener("click", () => {
+  toggleHfTokenPanel(false);
+});
+
+hfTokenSave.addEventListener("click", () => {
+  const token = hfTokenInput.value.trim();
+  setHfToken(token);
+  toggleHfTokenPanel(false);
+});
+
+hfTokenClear.addEventListener("click", () => {
+  hfTokenInput.value = "";
+  setHfToken("");
+  toggleHfTokenPanel(false);
+});
+
+// Chiudi pannello se clicchi fuori
+document.addEventListener("click", (e) => {
+  if (!hfTokenPanel.contains(e.target) && !hfTokenBtn.contains(e.target)) {
+    toggleHfTokenPanel(false);
+  }
+});
+
 // init
 loadModels();
+
+// setup iniziale: resize textarea + token
+resizeInputWrapper();
+const savedToken = getHfToken();
+if (savedToken) {
+  hfTokenInput.value = savedToken;
+  hfTokenBtn.classList.add("active");
+}
