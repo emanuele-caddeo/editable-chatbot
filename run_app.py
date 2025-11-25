@@ -32,14 +32,14 @@ def start_backend():
 
 def start_frontend():
     print("[CLIENT] Avvio server statico frontend...")
-    os.chdir(FRONTEND_DIR)
     cmd = [
         sys.executable,
         "-m",
         "http.server",
         str(FRONTEND_PORT)
     ]
-    subprocess.run(cmd)
+    subprocess.run(cmd, cwd=FRONTEND_DIR)
+
 
 
 def open_browser():

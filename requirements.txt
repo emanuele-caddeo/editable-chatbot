@@ -1,0 +1,7 @@
+fastapi>=0.115.0,<0.116.0
+uvicorn[standard]>=0.32.0,<0.33.0
+
+transformers>=4.46.0,<4.47.0
+huggingface_hub>=0.26.0,<0.27.0
+
+torch>=2.5.0,<2.6.0
