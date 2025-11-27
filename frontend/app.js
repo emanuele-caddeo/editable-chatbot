@@ -1,4 +1,5 @@
 const API_BASE = "http://localhost:8000";
+const WS_URL = "ws://localhost:8000/api/chat/stream";
 
 const chatContainer = document.getElementById("chat-container");
 const userInput = document.getElementById("user-input");
@@ -147,41 +148,60 @@ async function sendMessage() {
     return;
   }
 
+  // Aggiungo il messaggio utente
   addMessage("user", text);
   messages.push({ role: "user", content: text });
   userInput.value = "";
   resizeInputWrapper();
 
-  addMessage("assistant", "⏳ Sto pensando...");
-  const thinkingBubble = chatContainer.lastChild;
+  // Creo subito la bubble dell'assistente vuota
+  addMessage("assistant", "");
+  const assistantBubble = chatContainer.lastChild;
 
-  try {
-    const res = await fetch(`${API_BASE}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+  // WebSocket per streaming
+  const ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    ws.send(
+      JSON.stringify({
         model: currentModel,
         messages: messages,
         max_tokens: 256,
         temperature: 0.7,
-      }),
-    });
+      })
+    );
+  };
 
-    if (!res.ok) {
-      const err = await res.json();
-      thinkingBubble.textContent = "Errore: " + err.detail;
+  ws.onmessage = (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (e) {
+      console.error("Messaggio WS non valido:", event.data);
       return;
     }
 
-    const data = await res.json();
-    thinkingBubble.remove();
-    addMessage("assistant", data.reply);
-    messages.push({ role: "assistant", content: data.reply });
-  } catch (e) {
-    console.error(e);
-    thinkingBubble.textContent = "Errore nella richiesta.";
-  }
+    if (data.type === "chunk") {
+      assistantBubble.textContent += data.content;
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    } else if (data.type === "done") {
+      // salvo il messaggio completo nella history
+      messages.push({
+        role: "assistant",
+        content: assistantBubble.textContent,
+      });
+      ws.close();
+    } else if (data.type === "error") {
+      assistantBubble.textContent = "Errore: " + data.message;
+      ws.close();
+    }
+  };
+
+  ws.onerror = () => {
+    assistantBubble.textContent = "Errore di connessione al server.";
+  };
 }
+
 
 sendBtn.addEventListener("click", sendMessage);
 userInput.addEventListener("keydown", (e) => {

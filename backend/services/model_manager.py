@@ -2,7 +2,7 @@ import os
 from typing import Dict, Optional
 
 from huggingface_hub import snapshot_download
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, TextIteratorStreamer
 
 from backend.config import MODELS_DIR, HF_TOKEN
 
@@ -43,13 +43,25 @@ class ModelManager:
         local_dir = self.download_model(repo_id, token=token)
 
         tokenizer = AutoTokenizer.from_pretrained(local_dir)
-        model = AutoModelForCausalLM.from_pretrained(local_dir)
+        model = AutoModelForCausalLM.from_pretrained(
+            local_dir,
+            device_map="auto",
+            torch_dtype="auto"
+        )
+
+        try:
+            # se il modello è sharded su più device (CPU+GPU)
+            devices = {k: str(v.device) for k, v in model.named_parameters()}
+            unique_devices = sorted(set(devices.values()))
+            print(f"[MODEL LOAD] Device(s) in use: {unique_devices}")
+        except Exception:
+            # fallback: single device
+            print(f"[MODEL LOAD] Device: {model.device}")
 
         pipe = pipeline(
             "text-generation",
             model=model,
             tokenizer=tokenizer,
-            device_map="auto" if model.device.type != "cpu" else None,
         )
 
         self._pipelines[repo_id] = pipe
@@ -84,6 +96,51 @@ class ModelManager:
             pad_token_id=pipe.tokenizer.eos_token_id,
         )
         return out[0]["generated_text"][len(prompt):].strip()
+    
+    def generate_stream(
+        self,
+        repo_id: str,
+        prompt: str,
+        max_tokens: int = 256,
+        temperature: float = 0.7,
+        token: Optional[str] = None,
+    ):
+        """
+        Ritorna uno streamer che produce pezzi di testo man mano che il modello genera.
+        """
+        pipe = self.load_model(repo_id, token=token)
+        tokenizer = pipe.tokenizer
+        model = pipe.model
+
+        # streamer che restituisce stringhe parziali
+        streamer = TextIteratorStreamer(
+            tokenizer,
+            skip_prompt=True,
+            skip_special_tokens=True,
+        )
+
+        inputs = tokenizer(prompt, return_tensors="pt")
+        # manda tutto sul device del modello (CPU/GPU)
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+        gen_kwargs = dict(
+            **inputs,
+            max_new_tokens=max_tokens,
+            do_sample=True,
+            temperature=temperature,
+            streamer=streamer,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+
+        # lancio la generate in un thread separato
+        import threading
+
+        thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
+        thread.start()
+
+        # lo streamer è iterabile: for chunk in streamer: ...
+        return streamer
+
 
 
 model_manager = ModelManager()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import List
 
@@ -22,11 +22,6 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
 def build_prompt(messages: List[ChatMessage]) -> str:
-    """
-    Semplice prompt stile chat:
-    User: ...
-    Assistant: ...
-    """
     lines = []
     for m in messages:
         if m.role == "user":
@@ -39,6 +34,9 @@ def build_prompt(messages: List[ChatMessage]) -> str:
 
 @router.post("")
 def chat(body: ChatRequest):
+    """
+    Endpoint non-streaming (fallback / compatibilità).
+    """
     model_id = body.model or DEFAULT_MODEL
 
     try:
@@ -52,3 +50,52 @@ def chat(body: ChatRequest):
         return {"reply": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.websocket("/stream")
+async def chat_stream(ws: WebSocket):
+    """
+    WebSocket che streamma la risposta token-by-token.
+    Il client invia:
+      { model, messages, max_tokens, temperature }
+    e riceve:
+      { "type": "chunk", "content": "...pezzo..." }
+      ...
+      { "type": "done" }
+    oppure:
+      { "type": "error", "message": "..." }
+    """
+    await ws.accept()
+    try:
+        while True:
+            data = await ws.receive_json()
+            model_id = data.get("model") or DEFAULT_MODEL
+            raw_messages = data.get("messages", [])
+            max_tokens = int(data.get("max_tokens", 256))
+            temperature = float(data.get("temperature", 0.7))
+
+            # converto in ChatMessage per riusare build_prompt
+            messages = [ChatMessage(**m) for m in raw_messages]
+            prompt = build_prompt(messages)
+
+            try:
+                streamer = model_manager.generate_stream(
+                    repo_id=model_id,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+
+                # invio i chunk man mano che arrivano
+                for text_chunk in streamer:
+                    if text_chunk:
+                        await ws.send_json({"type": "chunk", "content": text_chunk})
+
+                await ws.send_json({"type": "done"})
+            except Exception as gen_err:
+                await ws.send_json(
+                    {"type": "error", "message": str(gen_err)}
+                )
+    except WebSocketDisconnect:
+        # il client ha chiuso la connessione
+        return
