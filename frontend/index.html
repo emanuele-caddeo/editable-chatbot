@@ -1,74 +1,111 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <title>Local HF Chatbot</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="page">
-    <header class="header">
-      <div class="logo">🧠 Editable Chatbot</div>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Local HF Chatbot</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="logo">🧠</div>
 
-      <div class="header-actions">
-        <div id="div-model-select" class="model-select">
-          <label for="model-list">Modello:</label>
-          <select id="model-list"></select>
-          <input
-            id="model-id-input"
-            type="text"
-            placeholder="repo_id HuggingFace (es: microsoft/phi-2)"
-          />
-          <button id="download-btn">Scarica / Usa</button>
-        </div>
-
-        <!-- Bottone icona per token HF -->
-        <button
-          id="hf-token-btn"
-          class="icon-btn"
-          title="Imposta Hugging Face token"
-        >
-          🔑
-        </button>
-
-        <!-- Pannellino token HF -->
-        <div id="hf-token-panel" class="hf-token-panel">
-          <div class="hf-token-header">
-            <span>Hugging Face Token</span>
-            <button id="hf-token-close" class="icon-btn small" title="Chiudi">
-              ✕
+        <!-- CPU/GPU toggle + spia + modello + HF token -->
+        <div class="compute-and-actions">
+          <!-- Toggle CPU / GPU -->
+          <div class="compute-toggle">
+            <button id="btn-cpu" class="compute-btn compute-btn-cpu">
+              CPU
+            </button>
+            <button id="btn-gpu" class="compute-btn compute-btn-gpu">
+              GPU
             </button>
           </div>
-          <input
-            id="hf-token-input"
-            type="password"
-            placeholder="hf_xxxxxxxxxxxxxxxxx"
-          />
-          <div class="hf-token-actions">
-            <button id="hf-token-save" class="primary-btn">Salva</button>
-            <button id="hf-token-clear" class="secondary-btn">Rimuovi</button>
+
+          <!-- Spia OFFLOAD -->
+          <div class="offload-indicator" title="Offload su disco">
+            <span id="offload-dot" class="offload-dot"></span>
+            <span class="offload-label">OL</span>
           </div>
-          <p class="hf-token-hint">
-            Il token viene salvato solo nel tuo browser (localStorage).
-          </p>
+
+          <!-- Selettore modello + input repo -->
+          <div id="div-model-select" class="model-select">
+            <label for="model-list">Modello:</label>
+            <select id="model-list"></select>
+            <input
+              id="model-id-input"
+              type="text"
+              placeholder="repo_id HuggingFace (es: microsoft/phi-2)"
+            />
+            <button id="download-btn">Scarica</button>
+          </div>
+
+          <!-- Bottone per gestire il token HF -->
+          <button
+            id="hf-token-btn"
+            class="icon-btn"
+            title="Imposta Hugging Face token"
+          >
+            🔑
+          </button>
+          <!-- Bottone per pulire la chat -->
+          <button
+            id="clear-chat-btn"
+            class="icon-btn clear-chat-btn"
+            title="Pulisci la chat e ricarica la pagina"
+          >
+            🗑️ <span class="clear-chat-label">Pulisci</span>
+          </button>
+
+
+          <!-- Pannellino per inserire il token HF -->
+          <div id="hf-token-panel" class="hf-token-panel">
+            <div class="hf-token-header">
+              <span>Hugging Face Token</span>
+              <button
+                id="hf-token-close"
+                class="icon-btn small"
+                title="Chiudi"
+              >
+                ✕
+              </button>
+            </div>
+            <input
+              id="hf-token-input"
+              type="password"
+              placeholder="hf_xxxxxxxxxxxxxxxxx"
+            />
+            <div class="hf-token-actions">
+              <button id="hf-token-save" class="primary-btn">Salva</button>
+              <button id="hf-token-clear" class="secondary-btn">
+                Rimuovi
+              </button>
+            </div>
+            <p class="hf-token-hint">
+              Il token viene salvato solo nel tuo browser (localStorage).
+            </p>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main class="main">
-      <section class="chat-container" id="chat-container">
-        <!-- messaggi -->
-      </section>
-    </main>
+      <main class="main">
+        <section class="chat-container" id="chat-container">
+          <!-- messaggi della chat -->
+        </section>
+      </main>
 
-    <footer class="footer">
-      <div class="input-wrapper">
-        <textarea id="user-input" rows="1" placeholder="Scrivi un messaggio..."></textarea>
-        <button id="send-btn">➤</button>
-      </div>
-    </footer>
-  </div>
+      <footer class="footer">
+        <div class="input-wrapper">
+          <textarea
+            id="user-input"
+            rows="1"
+            placeholder="Scrivi un messaggio..."
+          ></textarea>
+          <button id="send-btn">➤</button>
+        </div>
+      </footer>
+    </div>
 
-  <script src="app.js"></script>
-</body>
+    <script type="module" src="main.js"></script>
+  </body>
 </html>

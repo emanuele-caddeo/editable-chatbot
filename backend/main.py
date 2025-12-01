@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import models as models_router
 from backend.routers import chat as chat_router
+from backend.routers import system as system_router
 
 app = FastAPI(title="Local HF Chatbot")
 
@@ -18,6 +19,7 @@ app.add_middleware(
 
 app.include_router(models_router.router)
 app.include_router(chat_router.router)
+app.include_router(system_router.router)
 
 
 @app.get("/health")

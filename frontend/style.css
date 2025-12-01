@@ -50,6 +50,70 @@ body {
   gap: 8px;
 }
 
+.compute-and-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compute-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  overflow: hidden; /* per unire visivamente i due pulsanti */
+  border: 1px solid rgba(148,163,184,0.6);
+}
+
+.compute-btn {
+  border: none;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* CPU: blu Intel, testo bianco */
+.compute-btn-cpu {
+  background: #0071c5;
+  color: #ffffff;
+  border-right: 1px solid rgba(15,23,42,0.8);
+  border-radius: 8px 0 0 8px; /* angoli esterni 8px */
+}
+
+/* GPU: verde Nvidia, testo nero */
+.compute-btn-gpu {
+  background: #76b900;
+  color: #000000;
+  border-radius: 0 8px 8px 0; /* angoli esterni 8px */
+}
+
+/* stato attivo / selezionato */
+.compute-btn.active {
+  box-shadow: 0 0 8px rgba(255,255,255,0.5) inset;
+}
+
+/* SPIA OFFLOAD */
+.offload-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: rgba(248,250,252,0.8);
+}
+
+.offload-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #4b5563; /* grigio = off */
+  box-shadow: 0 0 4px rgba(15,23,42,0.8);
+}
+
+.offload-dot.active {
+  background: #ef4444; /* rosso acceso = offload attivo */
+  box-shadow: 0 0 8px rgba(248,113,113,0.9);
+}
+
+
 /* Bottone icona (chiave e chiudi) */
 .icon-btn {
   width: 32px;
@@ -82,6 +146,23 @@ body {
 .icon-btn.active {
   border-color: #22c55e;
   box-shadow: 0 0 14px rgba(34,197,94,0.7);
+}
+
+/* Bottone "Pulisci" */
+.clear-chat-btn {
+  /* eredita base da .icon-btn */
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: #ef4444;
+  box-shadow: 0 0 14px rgba(248,113,113,0.8); /* glow rosso come il verde del token */
+}
+
+.clear-chat-btn .clear-chat-label {
+  font-size: 0.75rem;
 }
 
 /* Pannellino token HF */
