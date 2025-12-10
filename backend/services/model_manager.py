@@ -6,14 +6,14 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, TextIter
 
 from backend.config import MODELS_DIR, HF_TOKEN
 
+
 class ModelManager:
     def __init__(self):
         self._pipelines: Dict[str, any] = {}
         os.makedirs(MODELS_DIR, exist_ok=True)
 
-        # modalità di computazione: "cpu" o "gpu"
+        # "cpu" o "gpu"
         self.compute_mode: str = "gpu"
-        # se l'ultimo load ha usato offload su disco
         self.last_offload: bool = False
 
     def _get_model_path(self, repo_id: str) -> str:
@@ -21,10 +21,6 @@ class ModelManager:
         return os.path.join(MODELS_DIR, safe_name)
 
     def download_model(self, repo_id: str, token: Optional[str] = None) -> str:
-        """
-        Scarica il modello da Hugging Face se non esiste già in locale.
-        Usa il token passato dalla richiesta, se presente; altrimenti HF_TOKEN da config.
-        """
         local_dir = self._get_model_path(repo_id)
 
         if not os.path.exists(local_dir):
@@ -42,10 +38,6 @@ class ModelManager:
         return local_dir
 
     def set_compute_mode(self, mode: str):
-        """
-        Imposta la modalità di computazione globale ("cpu" / "gpu")
-        e svuota le pipeline per forzare un reload coerente.
-        """
         mode = mode.lower()
         if mode not in ("cpu", "gpu"):
             raise ValueError(f"Invalid compute mode: {mode}")
@@ -62,17 +54,10 @@ class ModelManager:
         }
 
     def load_model(self, repo_id: str, token: Optional[str] = None, compute_mode: Optional[str] = None):
-        """
-        Carica (e se serve scarica) il modello e crea la pipeline di text-generation.
-        Supporta:
-          - CPU pura
-          - GPU con device_map="auto" + offload su disco
-        """
         mode = (compute_mode or self.compute_mode).lower()
         if mode not in ("cpu", "gpu"):
             mode = "gpu"
 
-        # se l'abbiamo già in cache, lo riusiamo
         if repo_id in self._pipelines:
             return self._pipelines[repo_id]
 
@@ -83,8 +68,8 @@ class ModelManager:
             print(f"[ModelManager] Loading model '{repo_id}' on CPU...", flush=True)
             model = AutoModelForCausalLM.from_pretrained(local_dir)
             self.last_offload = False
+
         else:
-            # GPU + offload su disco se non basta la VRAM
             offload_dir = os.path.join(local_dir, "offload")
             os.makedirs(offload_dir, exist_ok=True)
 
@@ -101,7 +86,6 @@ class ModelManager:
                 offload_state_dict=True,
             )
 
-            # rilevo se è effettivamente avvenuto offload su disco
             used_offload = False
             device_map = getattr(model, "hf_device_map", None)
             if isinstance(device_map, dict):
@@ -119,7 +103,7 @@ class ModelManager:
                 flush=True,
             )
 
-        # log device principale
+        # log device
         try:
             first_param = next(model.parameters())
             print(
@@ -127,10 +111,7 @@ class ModelManager:
                 flush=True,
             )
         except Exception as e:
-            print(
-                f"[ModelManager] Could not determine device for '{repo_id}': {e}",
-                flush=True,
-            )
+            print(f"[ModelManager] Could not determine device for '{repo_id}': {e}", flush=True)
 
         pipe = pipeline(
             "text-generation",
@@ -144,7 +125,7 @@ class ModelManager:
     def list_local_models(self):
         models = []
         if not os.path.exists(MODELS_DIR):
-            print("\033[92m" + f"Directory {MODELS_DIR} does not exist" + "\033[0m")
+            print(f"Directory {MODELS_DIR} does not exist")
             return models
         for name in os.listdir(MODELS_DIR):
             full = os.path.join(MODELS_DIR, name)
@@ -152,41 +133,55 @@ class ModelManager:
                 models.append(name.replace("__", "/"))
         return models
 
+    # ===============================================================
+    # STANDARD GENERATION (NON STREAM)
+    # Con parametri avanzati: top_p, top_k, repetition_penalty, ecc.
+    # ===============================================================
     def generate(
         self,
         repo_id: str,
         prompt: str,
         max_tokens: int = 256,
         temperature: float = 0.7,
+        top_p: float = 0.95,
+        top_k: int = 40,
+        repetition_penalty: float = 1.1,
         token: Optional[str] = None,
         compute_mode: Optional[str] = None,
     ) -> str:
-        """
-        Genera testo usando il modello richiesto.
-        Il token è usato solo per eventuali primi download.
-        """
+
         pipe = self.load_model(repo_id, token=token, compute_mode=compute_mode)
+
         out = pipe(
             prompt,
             max_new_tokens=max_tokens,
             do_sample=True,
             temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            repetition_penalty=repetition_penalty,
             pad_token_id=pipe.tokenizer.eos_token_id,
         )
+
         return out[0]["generated_text"][len(prompt):].strip()
 
+    # ===============================================================
+    # STREAMING GENERATION (MODEL.GENERATE + STREAMER)
+    # Con parametri avanzati
+    # ===============================================================
     def generate_stream(
         self,
         repo_id: str,
         prompt: str,
         max_tokens: int = 256,
         temperature: float = 0.7,
+        top_p: float = 0.95,
+        top_k: int = 40,
+        repetition_penalty: float = 1.1,
         token: Optional[str] = None,
         compute_mode: Optional[str] = None,
     ):
-        """
-        Ritorna uno streamer che produce pezzi di testo man mano che il modello genera.
-        """
+
         pipe = self.load_model(repo_id, token=token, compute_mode=compute_mode)
         tokenizer = pipe.tokenizer
         model = pipe.model
@@ -205,11 +200,15 @@ class ModelManager:
             max_new_tokens=max_tokens,
             do_sample=True,
             temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            repetition_penalty=repetition_penalty,
             streamer=streamer,
             pad_token_id=tokenizer.eos_token_id,
         )
 
         import threading
+
         thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
         thread.start()
 

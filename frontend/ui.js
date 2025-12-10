@@ -1,83 +1,89 @@
 // ui.js
-import { getMessages, pushMessage } from "./state.js";
+// Tutte le funzioni di UI necessarie a main.js
 
+/* ============================================================
+   ELEMENTI DOM
+============================================================ */
 const chatContainer = document.getElementById("chat-container");
 const userInput = document.getElementById("user-input");
-const inputWrapper = document.querySelector(".input-wrapper");
-const modelList = document.getElementById("model-list");
-const clearChatBtn = document.getElementById("clear-chat-btn");
-// ... e tutti gli altri elementi DOM
+const sendBtn = document.getElementById("send-btn");
 
-export function addMessage(role, content) {
-  const div = document.createElement("div");
-  div.classList.add("message", role);
-  div.textContent = content;
-  chatContainer.appendChild(div);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-export function getUserInputText() {
-  return userInput.value.trim();
-}
-
-export function clearUserInput() {
-  userInput.value = "";
-  resizeInputWrapper();
-}
-
+/* ============================================================
+   RESIZE INPUT
+============================================================ */
 export function resizeInputWrapper() {
-  const lineHeight = 25;
-  const computed = getComputedStyle(userInput);
-  const maxHeight = parseInt(computed.maxHeight, 10) || 120;
+  const inputWrapper = document.querySelector(".input-wrapper");
+  if (!userInput || !inputWrapper) return;
 
   userInput.style.height = "auto";
-  const scrollH = userInput.scrollHeight;
-
-  let numLines = Math.ceil(scrollH / lineHeight);
-  if (numLines < 1) numLines = 1;
-  let newHeight = numLines * lineHeight;
-  if (newHeight > maxHeight) newHeight = maxHeight;
-
+  let newHeight = userInput.scrollHeight;
   userInput.style.height = newHeight + "px";
-  const extraPadding = 20;
-  inputWrapper.style.height = newHeight + extraPadding + "px";
+  inputWrapper.style.height = newHeight + 20 + "px";
 }
 
-export function bindInputHandlers(onSend) {
-  document.getElementById("send-btn").addEventListener("click", onSend);
+/* ============================================================
+   MESSAGGI CHAT
+============================================================ */
+export function addMessage(role, content) {
+  const wrap = document.createElement("div");
+  wrap.className = `message ${role}`;
+
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "message-content";
+  contentDiv.textContent = content;
+
+  wrap.appendChild(contentDiv);
+  chatContainer.appendChild(wrap);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  return wrap;
+}
+
+export function renderMessages(messages) {
+  chatContainer.innerHTML = "";
+  (messages || []).forEach((m) => addMessage(m.role, m.content));
+}
+
+/* ============================================================
+   MODEL LIST
+============================================================ */
+export function setModelListOptions(models, selected) {
+  const select = document.getElementById("model-list");
+  select.innerHTML = "";
+  models.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    select.appendChild(opt);
+  });
+  if (selected) select.value = selected;
+}
+
+/* ============================================================
+   CLEAR CHAT BUTTON
+============================================================ */
+export function bindClearChat(handler) {
+  const btn = document.getElementById("clear-chat-btn");
+  if (!btn) return;
+  btn.addEventListener("click", handler);
+}
+
+/* ============================================================
+   CHAT INPUT HANDLERS  <-- QUESTA È LA FUNZIONE CHE MANCAVA
+============================================================ */
+export function bindChatInputHandlers(sendHandler) {
+  if (!sendBtn || !userInput) return;
+
+  sendBtn.addEventListener("click", () => {
+    sendHandler();
+  });
 
   userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      sendHandler();
     }
   });
 
   userInput.addEventListener("input", resizeInputWrapper);
 }
-
-export function bindClearChat(onClear) {
-  if (!clearChatBtn) return;
-  clearChatBtn.addEventListener("click", onClear);
-}
-
-export function setModelListOptions(models, currentModel) {
-  modelList.innerHTML = "";
-  models.forEach((m) => {
-    const opt = document.createElement("option");
-    opt.value = m;
-    opt.textContent = m;
-    modelList.appendChild(opt);
-  });
-  if (currentModel) {
-    modelList.value = currentModel;
-  }
-}
-
-export function bindModelChange(onChange) {
-  modelList.addEventListener("change", () => {
-    onChange(modelList.value);
-  });
-}
-
-// + qui metti tutta la parte HF token, CPU/GPU, offload indicator, ecc.

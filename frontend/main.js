@@ -1,83 +1,160 @@
-// main.js
-import { fetchModels, fetchHistory, clearHistory, openChatWebSocket, fetchSystemStatus, setComputeModeApi } from "./api.js";
-import { getCurrentModel, setCurrentModel, getMessages, pushMessage, clearMessages, getComputeMode, setComputeMode } from "./state.js";
-import { addMessage, getUserInputText, clearUserInput, bindInputHandlers, bindClearChat, resizeInputWrapper, setModelListOptions, bindModelChange } from "./ui.js";
+/********************************************************************
+ * MAIN.JS — Completamente aggiornato con SETTINGS PANEL avanzato
+ * Gestisce:
+ *  - Apertura/chiusura pannello impostazioni
+ *  - Parametri generazione modello (temperature, top_p, top_k, …)
+ *  - Compute mode CPU/GPU
+ *  - Comunicazione WebSocket
+ *  - Caricamento/salvataggio history
+ ********************************************************************/
 
-async function init() {
-  resizeInputWrapper();
+import {
+  fetchModels,
+  fetchHistory,
+  clearHistoryApi,
+  fetchSystemStatus,
+  setComputeModeApi,
+  openChatWebSocket,
+  downloadModel
+} from "./api.js";
 
-  // ============================
-  // 1) Carica modelli
-  // ============================
-  const modelsData = await fetchModels();
-  const models = modelsData.models || [];
+import {
+  getCurrentModel,
+  setCurrentModel,
+  getMessages,
+  setMessages,
+  pushMessage,
+  clearMessages,
+  getComputeMode,
+  setComputeMode
+} from "./state.js";
 
-  // NON impostare ancora il modello qui.
-  // Prima leggi la history (fix del bug)
+import {
+  addMessage,
+  renderMessages,
+  bindChatInputHandlers,
+  bindClearChat,
+  resizeInputWrapper,
+  setModelListOptions
+} from "./ui.js";
 
-  // ============================
-  // 2) Carica history
-  // ============================
-  let histModel = null;
-  try {
-    const hist = await fetchHistory();
-    if (hist.model) histModel = hist.model;
+/* ======================================================================
+   GENERATION SETTINGS — Default GPT-2 (richiesto)
+====================================================================== */
+let generationSettings = {
+  temperature: 0.3,
+  max_tokens: 200,
+  top_p: 0.95,
+  top_k: 40,
+  repetition_penalty: 1.15
+};
 
-    if (Array.isArray(hist.messages)) {
-      hist.messages.forEach((m) => {
-        pushMessage(m);
-        addMessage(m.role, m.content);
-      });
+/* ======================================================================
+   HF TOKEN STORAGE
+====================================================================== */
+function getHfToken() {
+  return localStorage.getItem("hf_token") || "";
+}
+
+function saveHfToken(token) {
+  if (token) localStorage.setItem("hf_token", token);
+  else localStorage.removeItem("hf_token");
+}
+
+/* ======================================================================
+   SETTINGS PANEL — LOGICA COMPLETA
+====================================================================== */
+function initSettingsPanel() {
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsPanel = document.getElementById("settings-panel");
+  const settingsClose = document.getElementById("settings-close");
+
+  // Slider temperatura
+  const tempSlider = document.getElementById("temperature-slider");
+  const tempValue = document.getElementById("temperature-value");
+
+  // Input numerici
+  const maxTokensInput = document.getElementById("max-tokens-input");
+  const topPInput = document.getElementById("top-p-input");
+  const topKInput = document.getElementById("top-k-input");
+  const repPenaltyInput = document.getElementById("repetition-penalty-input");
+
+  // Compute mode toggle
+  const btnCpu = document.getElementById("btn-cpu");
+  const btnGpu = document.getElementById("btn-gpu");
+
+  /* OPEN/CLOSE PANEL */
+  settingsBtn.addEventListener("click", () => {
+    settingsPanel.classList.toggle("open");
+  });
+
+  settingsClose.addEventListener("click", () => {
+    settingsPanel.classList.remove("open");
+  });
+
+  // Chiudi cliccando fuori
+  document.addEventListener("click", (e) => {
+    if (!settingsPanel.contains(e.target) &&
+        !settingsBtn.contains(e.target)) {
+      settingsPanel.classList.remove("open");
     }
-  } catch (e) {
-    console.warn("Nessuna history presente");
-  }
+  });
 
-  // ============================
-  // 3) Imposta il modello effettivo
-  // ============================
-  if (histModel && models.includes(histModel)) {
-    // Usa il modello letto da chat.json
-    setCurrentModel(histModel);
-  } else {
-    // Fallback: scegli il primo modello disponibile SOLO se la history non ne aveva uno
-    if (models.length > 0) {
-      setCurrentModel(models[models.length - 1]); // impossto l'ultimo modello come predefinito
+  /* SLIDER TEMPERATURE */
+  tempSlider.addEventListener("input", () => {
+    const val = parseFloat(tempSlider.value);
+    tempValue.textContent = val.toFixed(2);
+    generationSettings.temperature = val;
+  });
+
+  /* INPUT NUMERICI */
+  maxTokensInput.addEventListener("change", () => {
+    generationSettings.max_tokens = parseInt(maxTokensInput.value, 10);
+  });
+
+  topPInput.addEventListener("change", () => {
+    generationSettings.top_p = parseFloat(topPInput.value);
+  });
+
+  topKInput.addEventListener("change", () => {
+    generationSettings.top_k = parseInt(topKInput.value, 10);
+  });
+
+  repPenaltyInput.addEventListener("change", () => {
+    generationSettings.repetition_penalty =
+      parseFloat(repPenaltyInput.value);
+  });
+
+  /* CPU / GPU TOGGLE */
+  btnCpu.addEventListener("click", async () => {
+    try {
+      const res = await setComputeModeApi("cpu");
+      setComputeMode(res.mode);
+      btnCpu.classList.add("active");
+      btnGpu.classList.remove("active");
+    } catch (e) {
+      alert("Errore cambio compute mode: " + e.message);
     }
-  }
+  });
 
-  // Aggiorna UI con il modello corretto
-  setModelListOptions(models, getCurrentModel());
-  bindModelChange((model) => setCurrentModel(model));
-
-  // ============================
-  // 4) System status
-  // ============================
-  try {
-    const status = await fetchSystemStatus();
-    setComputeMode(status.compute_mode || "gpu");
-    // eventuale UI CPU/GPU/offload...
-  } catch (e) {
-    console.warn("Errore system status", e);
-  }
-
-  // ============================
-  // 5) Bind invio messaggi
-  // ============================
-  bindInputHandlers(handleSend);
-
-  // ============================
-  // 6) Clear chat
-  // ============================
-  bindClearChat(async () => {
-    await clearHistory();
-    clearMessages();
-    location.reload();
+  btnGpu.addEventListener("click", async () => {
+    try {
+      const res = await setComputeModeApi("gpu");
+      setComputeMode(res.mode);
+      btnGpu.classList.add("active");
+      btnCpu.classList.remove("active");
+    } catch (e) {
+      alert("Errore cambio compute mode: " + e.message);
+    }
   });
 }
 
+/* ======================================================================
+   HANDLE SEND — invio messaggi + parametri generazione
+====================================================================== */
 async function handleSend() {
-  const text = getUserInputText();
+  const input = document.getElementById("user-input");
+  const text = input.value.trim();
   if (!text) return;
 
   const model = getCurrentModel();
@@ -86,29 +163,112 @@ async function handleSend() {
     return;
   }
 
-  // aggiorno stato + UI locale
+  // Aggiungi messaggio user a UI
   pushMessage({ role: "user", content: text });
   addMessage("user", text);
-  clearUserInput();
-  addMessage("assistant", "");
-  const assistantBubble = document.querySelector(".message.assistant:last-child");
 
+  input.value = "";
+  resizeInputWrapper();
+
+  const assistantBubble = addMessage("assistant", "");
   let fullReply = "";
 
+  // Apertura WS
   openChatWebSocket({
     model,
     message: text,
-    computeMode: getComputeMode(),
+    compute_mode: getComputeMode(),
+
+    // 🔥 Parametri generazione
+    ...generationSettings,
+
     onChunk: (chunk) => {
       fullReply += chunk;
-      assistantBubble.textContent += chunk;
+      assistantBubble.querySelector(".message-content").textContent = fullReply;
     },
+
     onDone: () => {
       pushMessage({ role: "assistant", content: fullReply });
     },
-    onError: (msg) => {
-      assistantBubble.textContent = "Errore: " + msg;
+
+    onError: (err) => {
+      assistantBubble.querySelector(".message-content").textContent =
+        "Errore: " + err;
     },
+  });
+}
+
+/* ======================================================================
+   INIT — Avvio completo UI + history + settings
+====================================================================== */
+async function init() {
+  resizeInputWrapper();
+
+  /* --- MODELS --- */
+  let models = [];
+  try {
+    const data = await fetchModels();
+    models = data.models || [];
+  } catch {}
+
+  /* --- HISTORY --- */
+  try {
+    const hist = await fetchHistory();
+
+    if (hist.model && models.includes(hist.model)) {
+      setCurrentModel(hist.model);
+    } else if (!getCurrentModel() && models.length > 0) {
+      setCurrentModel(models[0]);
+    }
+
+    setMessages(hist.messages || []);
+    renderMessages(getMessages());
+  } catch {
+    if (!getCurrentModel() && models.length > 0) {
+      setCurrentModel(models[0]);
+    }
+  }
+
+  /* --- MODEL SELECT UI --- */
+  setModelListOptions(models, getCurrentModel());
+
+  const modelSelect = document.getElementById("model-list");
+  modelSelect.addEventListener("change", () => {
+    setCurrentModel(modelSelect.value);
+  });
+
+  /* --- SYSTEM STATUS (compute mode) --- */
+  try {
+    const status = await fetchSystemStatus();
+    setComputeMode(status.compute_mode || "gpu");
+  } catch {}
+
+  /* --- SETTINGS PANEL --- */
+  initSettingsPanel();
+
+  /* --- CHAT INPUT HANDLERS --- */
+  bindChatInputHandlers(handleSend);
+
+  /* --- CLEAR CHAT --- */
+  bindClearChat(async () => {
+    await clearHistoryApi();
+    clearMessages();
+    location.reload();
+  });
+
+  /* --- DOWNLOAD MODEL --- */
+  document.getElementById("download-btn").addEventListener("click", async () => {
+    const repoId = document.getElementById("model-id-input").value.trim();
+    if (!repoId) return;
+
+    try {
+      await downloadModel(repoId, getHfToken());
+      const data = await fetchModels();
+      setModelListOptions(data.models, repoId);
+      setCurrentModel(repoId);
+    } catch (e) {
+      alert("Errore durante il download: " + e.message);
+    }
   });
 }
 

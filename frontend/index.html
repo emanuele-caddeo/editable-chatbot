@@ -10,16 +10,151 @@
       <header class="header">
         <div class="logo">🧠</div>
 
-        <!-- CPU/GPU toggle + spia + modello + HF token -->
-        <div class="compute-and-actions">
-          <!-- Toggle CPU / GPU -->
-          <div class="compute-toggle">
-            <button id="btn-cpu" class="compute-btn compute-btn-cpu">
-              CPU
+        <!-- Azioni header: impostazioni, offload, modello, token, pulisci -->
+        <div class="header-actions compute-and-actions">
+          <!-- Wrapper impostazioni -->
+          <div class="settings-wrapper">
+            <button
+              id="settings-btn"
+              class="icon-btn"
+              title="Impostazioni modello"
+            >
+              ⚙️
             </button>
-            <button id="btn-gpu" class="compute-btn compute-btn-gpu">
-              GPU
-            </button>
+
+            <!-- Pannello impostazioni modello -->
+            <div id="settings-panel" class="settings-panel">
+              <div class="settings-header">
+                <span>Model settings</span>
+                <button
+                  id="settings-close"
+                  class="icon-btn small"
+                  title="Chiudi impostazioni"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Sezione compute mode -->
+              <div class="settings-section">
+                <label class="settings-label">Compute mode</label>
+                <div class="compute-toggle">
+                  <button
+                    id="btn-cpu"
+                    class="compute-btn compute-btn-cpu"
+                    type="button"
+                  >
+                    CPU
+                  </button>
+                  <button
+                    id="btn-gpu"
+                    class="compute-btn compute-btn-gpu"
+                    type="button"
+                  >
+                    GPU
+                  </button>
+                </div>
+                <p class="settings-hint">
+                  Scegli se eseguire il modello su CPU o GPU (quando disponibile).
+                </p>
+              </div>
+
+              <!-- Sezione temperatura -->
+              <div class="settings-section">
+                <label for="temperature-slider" class="settings-label">
+                  Temperature
+                  <span id="temperature-value" class="settings-value">0.30</span>
+                </label>
+                <input
+                  id="temperature-slider"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.3"
+                />
+                <p class="settings-hint">
+                  Valori più bassi =&gt; risposte più deterministiche, più alti =&gt;
+                  più creative. Default: 0.3 (GPT-2 friendly).
+                </p>
+              </div>
+
+              <!-- Sezione avanzata: altri parametri -->
+              <div class="settings-section">
+                <div class="settings-grid">
+                  <div class="settings-field">
+                    <label for="max-tokens-input" class="settings-label">
+                      Max tokens
+                    </label>
+                    <input
+                      id="max-tokens-input"
+                      type="number"
+                      min="1"
+                      max="2048"
+                      value="200"
+                    />
+                    <p class="settings-hint small">
+                      Numero massimo di token generati.
+                    </p>
+                  </div>
+
+                  <div class="settings-field">
+                    <label for="top-p-input" class="settings-label">
+                      top_p
+                    </label>
+                    <input
+                      id="top-p-input"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      value="0.95"
+                    />
+                    <p class="settings-hint small">
+                      Nucleus sampling (default 0.95).
+                    </p>
+                  </div>
+
+                  <div class="settings-field">
+                    <label for="top-k-input" class="settings-label">
+                      top_k
+                    </label>
+                    <input
+                      id="top-k-input"
+                      type="number"
+                      min="0"
+                      max="200"
+                      value="40"
+                    />
+                    <p class="settings-hint small">
+                      Limita il vocabolario ai k token più probabili.
+                    </p>
+                  </div>
+
+                  <div class="settings-field">
+                    <label for="repetition-penalty-input" class="settings-label">
+                      Repetition penalty
+                    </label>
+                    <input
+                      id="repetition-penalty-input"
+                      type="number"
+                      step="0.01"
+                      min="0.5"
+                      max="2"
+                      value="1.15"
+                    />
+                    <p class="settings-hint small">
+                      >1 riduce le ripetizioni (default 1.15).
+                    </p>
+                  </div>
+                </div>
+
+                <p class="settings-hint">
+                  I valori di default sono ottimizzati per modelli pre-trained
+                  in stile GPT-2 / GPT-J.
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Spia OFFLOAD -->
@@ -48,6 +183,7 @@
           >
             🔑
           </button>
+
           <!-- Bottone per pulire la chat -->
           <button
             id="clear-chat-btn"
@@ -56,7 +192,6 @@
           >
             🗑️ <span class="clear-chat-label">Pulisci</span>
           </button>
-
 
           <!-- Pannellino per inserire il token HF -->
           <div id="hf-token-panel" class="hf-token-panel">
