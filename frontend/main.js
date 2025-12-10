@@ -6,19 +6,23 @@ import { addMessage, getUserInputText, clearUserInput, bindInputHandlers, bindCl
 async function init() {
   resizeInputWrapper();
 
-  // carica modelli
+  // ============================
+  // 1) Carica modelli
+  // ============================
   const modelsData = await fetchModels();
   const models = modelsData.models || [];
-  if (models.length > 0 && !getCurrentModel()) {
-    setCurrentModel(models[0]);
-  }
-  setModelListOptions(models, getCurrentModel());
-  bindModelChange((model) => setCurrentModel(model));
 
-  // carica history
+  // NON impostare ancora il modello qui.
+  // Prima leggi la history (fix del bug)
+
+  // ============================
+  // 2) Carica history
+  // ============================
+  let histModel = null;
   try {
     const hist = await fetchHistory();
-    if (hist.model) setCurrentModel(hist.model);
+    if (hist.model) histModel = hist.model;
+
     if (Array.isArray(hist.messages)) {
       hist.messages.forEach((m) => {
         pushMessage(m);
@@ -29,18 +33,42 @@ async function init() {
     console.warn("Nessuna history presente");
   }
 
-  // system status
+  // ============================
+  // 3) Imposta il modello effettivo
+  // ============================
+  if (histModel && models.includes(histModel)) {
+    // Usa il modello letto da chat.json
+    setCurrentModel(histModel);
+  } else {
+    // Fallback: scegli il primo modello disponibile SOLO se la history non ne aveva uno
+    if (models.length > 0) {
+      setCurrentModel(models[models.length - 1]); // impossto l'ultimo modello come predefinito
+    }
+  }
+
+  // Aggiorna UI con il modello corretto
+  setModelListOptions(models, getCurrentModel());
+  bindModelChange((model) => setCurrentModel(model));
+
+  // ============================
+  // 4) System status
+  // ============================
   try {
     const status = await fetchSystemStatus();
     setComputeMode(status.compute_mode || "gpu");
-    // qui aggiorni UI CPU/GPU/offload...
+    // eventuale UI CPU/GPU/offload...
   } catch (e) {
     console.warn("Errore system status", e);
   }
 
-  // bind invio messaggio
+  // ============================
+  // 5) Bind invio messaggi
+  // ============================
   bindInputHandlers(handleSend);
-  // bind pulisci chat
+
+  // ============================
+  // 6) Clear chat
+  // ============================
   bindClearChat(async () => {
     await clearHistory();
     clearMessages();
@@ -51,6 +79,7 @@ async function init() {
 async function handleSend() {
   const text = getUserInputText();
   if (!text) return;
+
   const model = getCurrentModel();
   if (!model) {
     alert("Seleziona un modello");
