@@ -1,11 +1,12 @@
 /********************************************************************
- * MAIN.JS — Completamente aggiornato con SETTINGS PANEL avanzato
- * Gestisce:
+ * MAIN.JS — con:
+ *  - Salvataggio automatico dell’ultimo modello selezionato
  *  - Apertura/chiusura pannello impostazioni
- *  - Parametri generazione modello (temperature, top_p, top_k, …)
+ *  - Apertura/chiusura pannello token HF
+ *  - Parametri generazione modello
  *  - Compute mode CPU/GPU
- *  - Comunicazione WebSocket
- *  - Caricamento/salvataggio history
+ *  - Chat WebSocket con streaming
+ *  - Gestione history
  ********************************************************************/
 
 import {
@@ -15,7 +16,8 @@ import {
   fetchSystemStatus,
   setComputeModeApi,
   openChatWebSocket,
-  downloadModel
+  downloadModel,
+  saveHistory
 } from "./api.js";
 
 import {
@@ -39,14 +41,14 @@ import {
 } from "./ui.js";
 
 /* ======================================================================
-   GENERATION SETTINGS — Default GPT-2 (richiesto)
+   GENERATION SETTINGS
 ====================================================================== */
 let generationSettings = {
   temperature: 0.3,
   max_tokens: 200,
   top_p: 0.95,
   top_k: 40,
-  repetition_penalty: 1.15
+  repetition_penalty: 1.15,
 };
 
 /* ======================================================================
@@ -62,28 +64,25 @@ function saveHfToken(token) {
 }
 
 /* ======================================================================
-   SETTINGS PANEL — LOGICA COMPLETA
+   SETTINGS PANEL
 ====================================================================== */
 function initSettingsPanel() {
   const settingsBtn = document.getElementById("settings-btn");
   const settingsPanel = document.getElementById("settings-panel");
   const settingsClose = document.getElementById("settings-close");
 
-  // Slider temperatura
   const tempSlider = document.getElementById("temperature-slider");
   const tempValue = document.getElementById("temperature-value");
 
-  // Input numerici
   const maxTokensInput = document.getElementById("max-tokens-input");
   const topPInput = document.getElementById("top-p-input");
   const topKInput = document.getElementById("top-k-input");
   const repPenaltyInput = document.getElementById("repetition-penalty-input");
 
-  // Compute mode toggle
   const btnCpu = document.getElementById("btn-cpu");
   const btnGpu = document.getElementById("btn-gpu");
 
-  /* OPEN/CLOSE PANEL */
+  /* Apertura/chiusura */
   settingsBtn.addEventListener("click", () => {
     settingsPanel.classList.toggle("open");
   });
@@ -92,24 +91,22 @@ function initSettingsPanel() {
     settingsPanel.classList.remove("open");
   });
 
-  // Chiudi cliccando fuori
   document.addEventListener("click", (e) => {
-    if (!settingsPanel.contains(e.target) &&
-        !settingsBtn.contains(e.target)) {
+    if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
       settingsPanel.classList.remove("open");
     }
   });
 
-  /* SLIDER TEMPERATURE */
+  /* Slider temperatura */
   tempSlider.addEventListener("input", () => {
     const val = parseFloat(tempSlider.value);
     tempValue.textContent = val.toFixed(2);
     generationSettings.temperature = val;
   });
 
-  /* INPUT NUMERICI */
+  /* Parametri generazione */
   maxTokensInput.addEventListener("change", () => {
-    generationSettings.max_tokens = parseInt(maxTokensInput.value, 10);
+    generationSettings.max_tokens = parseInt(maxTokensInput.value);
   });
 
   topPInput.addEventListener("change", () => {
@@ -117,15 +114,14 @@ function initSettingsPanel() {
   });
 
   topKInput.addEventListener("change", () => {
-    generationSettings.top_k = parseInt(topKInput.value, 10);
+    generationSettings.top_k = parseInt(topKInput.value);
   });
 
   repPenaltyInput.addEventListener("change", () => {
-    generationSettings.repetition_penalty =
-      parseFloat(repPenaltyInput.value);
+    generationSettings.repetition_penalty = parseFloat(repPenaltyInput.value);
   });
 
-  /* CPU / GPU TOGGLE */
+  /* Compute mode toggle */
   btnCpu.addEventListener("click", async () => {
     try {
       const res = await setComputeModeApi("cpu");
@@ -133,7 +129,7 @@ function initSettingsPanel() {
       btnCpu.classList.add("active");
       btnGpu.classList.remove("active");
     } catch (e) {
-      alert("Errore cambio compute mode: " + e.message);
+      alert("Errore: " + e.message);
     }
   });
 
@@ -144,13 +140,52 @@ function initSettingsPanel() {
       btnGpu.classList.add("active");
       btnCpu.classList.remove("active");
     } catch (e) {
-      alert("Errore cambio compute mode: " + e.message);
+      alert("Errore: " + e.message);
     }
   });
 }
 
 /* ======================================================================
-   HANDLE SEND — invio messaggi + parametri generazione
+   HF TOKEN PANEL
+====================================================================== */
+function initHfTokenPanel() {
+  const btn = document.getElementById("hf-token-btn");
+  const panel = document.getElementById("hf-token-panel");
+  const closeBtn = document.getElementById("hf-token-close");
+  const input = document.getElementById("hf-token-input");
+  const saveBtn = document.getElementById("hf-token-save");
+  const clearBtn = document.getElementById("hf-token-clear");
+
+  input.value = getHfToken();
+
+  btn.addEventListener("click", () => {
+    panel.classList.toggle("open");
+  });
+
+  closeBtn.addEventListener("click", () => {
+    panel.classList.remove("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.classList.remove("open");
+    }
+  });
+
+  saveBtn.addEventListener("click", () => {
+    saveHfToken(input.value.trim());
+    panel.classList.remove("open");
+  });
+
+  clearBtn.addEventListener("click", () => {
+    saveHfToken("");
+    input.value = "";
+    panel.classList.remove("open");
+  });
+}
+
+/* ======================================================================
+   SEND MESSAGE
 ====================================================================== */
 async function handleSend() {
   const input = document.getElementById("user-input");
@@ -163,7 +198,6 @@ async function handleSend() {
     return;
   }
 
-  // Aggiungi messaggio user a UI
   pushMessage({ role: "user", content: text });
   addMessage("user", text);
 
@@ -173,13 +207,10 @@ async function handleSend() {
   const assistantBubble = addMessage("assistant", "");
   let fullReply = "";
 
-  // Apertura WS
   openChatWebSocket({
     model,
     message: text,
     compute_mode: getComputeMode(),
-
-    // 🔥 Parametri generazione
     ...generationSettings,
 
     onChunk: (chunk) => {
@@ -199,28 +230,26 @@ async function handleSend() {
 }
 
 /* ======================================================================
-   INIT — Avvio completo UI + history + settings
+   INIT
 ====================================================================== */
 async function init() {
   resizeInputWrapper();
 
-  /* --- MODELS --- */
+  /* Carica modelli */
   let models = [];
   try {
     const data = await fetchModels();
     models = data.models || [];
   } catch {}
 
-  /* --- HISTORY --- */
+  /* Carica history */
   try {
     const hist = await fetchHistory();
-
     if (hist.model && models.includes(hist.model)) {
       setCurrentModel(hist.model);
     } else if (!getCurrentModel() && models.length > 0) {
       setCurrentModel(models[0]);
     }
-
     setMessages(hist.messages || []);
     renderMessages(getMessages());
   } catch {
@@ -229,36 +258,43 @@ async function init() {
     }
   }
 
-  /* --- MODEL SELECT UI --- */
+  /* Popola select modelli */
   setModelListOptions(models, getCurrentModel());
 
   const modelSelect = document.getElementById("model-list");
-  modelSelect.addEventListener("change", () => {
-    setCurrentModel(modelSelect.value);
+  modelSelect.addEventListener("change", async () => {
+    const model = modelSelect.value;
+    setCurrentModel(model);
+
+    try {
+      await saveHistory(model, getMessages());
+    } catch (e) {
+      console.error("Errore salvataggio modello:", e);
+    }
   });
 
-  /* --- SYSTEM STATUS (compute mode) --- */
+  /* Compute mode */
   try {
     const status = await fetchSystemStatus();
     setComputeMode(status.compute_mode || "gpu");
   } catch {}
 
-  /* --- SETTINGS PANEL --- */
   initSettingsPanel();
+  initHfTokenPanel();
 
-  /* --- CHAT INPUT HANDLERS --- */
   bindChatInputHandlers(handleSend);
 
-  /* --- CLEAR CHAT --- */
   bindClearChat(async () => {
     await clearHistoryApi();
     clearMessages();
     location.reload();
   });
 
-  /* --- DOWNLOAD MODEL --- */
-  document.getElementById("download-btn").addEventListener("click", async () => {
-    const repoId = document.getElementById("model-id-input").value.trim();
+  /* Download modello */
+  const downloadBtn = document.getElementById("download-btn");
+  downloadBtn.addEventListener("click", async () => {
+    const repoInput = document.getElementById("model-id-input");
+    const repoId = repoInput.value.trim();
     if (!repoId) return;
 
     try {
@@ -266,8 +302,10 @@ async function init() {
       const data = await fetchModels();
       setModelListOptions(data.models, repoId);
       setCurrentModel(repoId);
+
+      await saveHistory(repoId, getMessages());
     } catch (e) {
-      alert("Errore durante il download: " + e.message);
+      alert("Errore download modello: " + e.message);
     }
   });
 }

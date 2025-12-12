@@ -1,5 +1,4 @@
-// ui.js
-// Tutte le funzioni di UI necessarie a main.js
+// ui.js — Funzioni di UI usate da main.js
 
 /* ============================================================
    ELEMENTI DOM
@@ -16,15 +15,22 @@ export function resizeInputWrapper() {
   if (!userInput || !inputWrapper) return;
 
   userInput.style.height = "auto";
-  let newHeight = userInput.scrollHeight;
+  const newHeight = userInput.scrollHeight;
   userInput.style.height = newHeight + "px";
   inputWrapper.style.height = newHeight + 20 + "px";
+
+  // scrolla in fondo quando cresce
+  if (chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 }
 
 /* ============================================================
    MESSAGGI CHAT
 ============================================================ */
 export function addMessage(role, content) {
+  if (!chatContainer) return document.createElement("div");
+
   const wrap = document.createElement("div");
   wrap.className = `message ${role}`;
 
@@ -40,6 +46,7 @@ export function addMessage(role, content) {
 }
 
 export function renderMessages(messages) {
+  if (!chatContainer) return;
   chatContainer.innerHTML = "";
   (messages || []).forEach((m) => addMessage(m.role, m.content));
 }
@@ -49,14 +56,19 @@ export function renderMessages(messages) {
 ============================================================ */
 export function setModelListOptions(models, selected) {
   const select = document.getElementById("model-list");
+  if (!select) return;
+
   select.innerHTML = "";
-  models.forEach((m) => {
+  (models || []).forEach((m) => {
     const opt = document.createElement("option");
     opt.value = m;
     opt.textContent = m;
     select.appendChild(opt);
   });
-  if (selected) select.value = selected;
+
+  if (selected && models.includes(selected)) {
+    select.value = selected;
+  }
 }
 
 /* ============================================================
@@ -69,7 +81,7 @@ export function bindClearChat(handler) {
 }
 
 /* ============================================================
-   CHAT INPUT HANDLERS  <-- QUESTA È LA FUNZIONE CHE MANCAVA
+   CHAT INPUT HANDLERS
 ============================================================ */
 export function bindChatInputHandlers(sendHandler) {
   if (!sendBtn || !userInput) return;
@@ -85,5 +97,7 @@ export function bindChatInputHandlers(sendHandler) {
     }
   });
 
-  userInput.addEventListener("input", resizeInputWrapper);
+  userInput.addEventListener("input", () => {
+    resizeInputWrapper();
+  });
 }

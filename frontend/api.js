@@ -58,6 +58,20 @@ export async function fetchHistory() {
   return res.json();
 }
 
+export async function saveHistory(history) {
+  const res = await fetch(`${API_BASE}/api/chat/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(history)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Errore save history: ${res.status}`);
+  }
+
+  return res.json();
+}
+
 export async function clearHistoryApi() {
   const res = await fetch(`${API_BASE}/api/chat/history`, {
     method: "DELETE",

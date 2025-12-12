@@ -407,7 +407,6 @@ body {
   display: inline-flex;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.6);
 }
 
 .compute-btn {
