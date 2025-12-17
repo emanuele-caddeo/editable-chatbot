@@ -1,14 +1,14 @@
-// ui.js — Funzioni di UI usate da main.js
+// ui.js — UI helpers used by main.js
 
 /* ============================================================
-   ELEMENTI DOM
+   DOM ELEMENTS
 ============================================================ */
 const chatContainer = document.getElementById("chat-container");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 
 /* ============================================================
-   RESIZE INPUT
+   INPUT AUTO-RESIZE
 ============================================================ */
 export function resizeInputWrapper() {
   const inputWrapper = document.querySelector(".input-wrapper");
@@ -19,14 +19,14 @@ export function resizeInputWrapper() {
   userInput.style.height = newHeight + "px";
   inputWrapper.style.height = newHeight + 20 + "px";
 
-  // scrolla in fondo quando cresce
+  // Keep the scroll pinned to the bottom when the input grows
   if (chatContainer) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
   }
 }
 
 /* ============================================================
-   MESSAGGI CHAT
+   CHAT MESSAGES
 ============================================================ */
 export function addMessage(role, content) {
   if (!chatContainer) return document.createElement("div");
@@ -81,18 +81,39 @@ export function bindClearChat(handler) {
 }
 
 /* ============================================================
+   INPUT LOCK (SYSTEM BUSY)
+============================================================ */
+export function setChatInputLocked(locked, placeholderText = "") {
+  if (!userInput || !sendBtn) return;
+
+  userInput.disabled = !!locked;
+  sendBtn.disabled = !!locked;
+
+  if (locked) {
+    if (placeholderText) userInput.placeholder = placeholderText;
+    userInput.blur();
+  } else {
+    if (placeholderText) userInput.placeholder = placeholderText;
+  }
+}
+
+/* ============================================================
    CHAT INPUT HANDLERS
 ============================================================ */
 export function bindChatInputHandlers(sendHandler) {
   if (!sendBtn || !userInput) return;
 
   sendBtn.addEventListener("click", () => {
+    if (sendBtn.disabled || userInput.disabled) return;
     sendHandler();
   });
 
   userInput.addEventListener("keydown", (e) => {
+    if (userInput.disabled) return;
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      if (sendBtn.disabled) return;
       sendHandler();
     }
   });

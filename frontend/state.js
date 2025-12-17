@@ -1,8 +1,8 @@
 // state.js
-// Gestione dello stato globale dell'applicazione
+// Global application state
 
 /* ============================================================
-   MODELLO SELEZIONATO
+   SELECTED MODEL
 ============================================================ */
 let currentModel = null;
 
@@ -15,7 +15,7 @@ export function setCurrentModel(model) {
 }
 
 /* ============================================================
-   MESSAGGI DELLA CHAT (solo per UI)
+   CHAT MESSAGES (UI-only)
 ============================================================ */
 let messages = [];
 
@@ -49,7 +49,7 @@ export function setComputeMode(mode) {
 }
 
 /* ============================================================
-   STATO GENERAZIONE (eventuale stop futuro)
+   GENERATION STATE (future stop support)
 ============================================================ */
 let isGenerating = false;
 
@@ -59,4 +59,17 @@ export function getIsGenerating() {
 
 export function setIsGenerating(flag) {
   isGenerating = flag;
+}
+
+/* ============================================================
+   SYSTEM BUSY STATE (e.g., knowledge editing in progress)
+============================================================ */
+let systemBusy = false;
+
+export function getSystemBusy() {
+  return systemBusy;
+}
+
+export function setSystemBusy(flag) {
+  systemBusy = !!flag;
 }

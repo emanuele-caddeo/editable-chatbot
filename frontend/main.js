@@ -1,12 +1,12 @@
 /********************************************************************
- * MAIN.JS — con:
- *  - Salvataggio automatico dell’ultimo modello selezionato
- *  - Apertura/chiusura pannello impostazioni
- *  - Apertura/chiusura pannello token HF
- *  - Parametri generazione modello
- *  - Compute mode CPU/GPU
- *  - Chat WebSocket con streaming
- *  - Gestione history
+ * main.js — features:
+ *  - Auto-save the last selected model
+ *  - Open/close the Settings panel
+ *  - Open/close the HF token panel
+ *  - Model generation parameters
+ *  - CPU/GPU compute mode
+ *  - Streaming WebSocket chat
+ *  - Chat history management
  ********************************************************************/
 
 import {
@@ -28,7 +28,9 @@ import {
   pushMessage,
   clearMessages,
   getComputeMode,
-  setComputeMode
+  setComputeMode,
+  getSystemBusy,
+  setSystemBusy
 } from "./state.js";
 
 import {
@@ -37,7 +39,8 @@ import {
   bindChatInputHandlers,
   bindClearChat,
   resizeInputWrapper,
-  setModelListOptions
+  setModelListOptions,
+  setChatInputLocked
 } from "./ui.js";
 
 /* ======================================================================
@@ -82,7 +85,7 @@ function initSettingsPanel() {
   const btnCpu = document.getElementById("btn-cpu");
   const btnGpu = document.getElementById("btn-gpu");
 
-  /* Apertura/chiusura */
+  /* Open/close */
   settingsBtn.addEventListener("click", () => {
     settingsPanel.classList.toggle("open");
   });
@@ -97,14 +100,14 @@ function initSettingsPanel() {
     }
   });
 
-  /* Slider temperatura */
+  /* Temperature slider */
   tempSlider.addEventListener("input", () => {
     const val = parseFloat(tempSlider.value);
     tempValue.textContent = val.toFixed(2);
     generationSettings.temperature = val;
   });
 
-  /* Parametri generazione */
+  /* Generation parameters */
   maxTokensInput.addEventListener("change", () => {
     generationSettings.max_tokens = parseInt(maxTokensInput.value);
   });
@@ -129,7 +132,7 @@ function initSettingsPanel() {
       btnCpu.classList.add("active");
       btnGpu.classList.remove("active");
     } catch (e) {
-      alert("Errore: " + e.message);
+      alert("Error: " + e.message);
     }
   });
 
@@ -140,7 +143,7 @@ function initSettingsPanel() {
       btnGpu.classList.add("active");
       btnCpu.classList.remove("active");
     } catch (e) {
-      alert("Errore: " + e.message);
+      alert("Error: " + e.message);
     }
   });
 }
@@ -192,9 +195,14 @@ async function handleSend() {
   const text = input.value.trim();
   if (!text) return;
 
+  // Block user input while the system is busy (e.g., knowledge editing)
+  if (getSystemBusy()) {
+    return;
+  }
+
   const model = getCurrentModel();
   if (!model) {
-    alert("Seleziona un modello");
+    alert("Select a model");
     return;
   }
 
@@ -214,6 +222,18 @@ async function handleSend() {
     ...generationSettings,
 
     onChunk: (chunk) => {
+      // System control tokens (do not display)
+      if (chunk === "__SYSTEM_BUSY__") {
+        setSystemBusy(true);
+        setChatInputLocked(true, "Knowledge editing in progress…");
+        return;
+      }
+      if (chunk === "__SYSTEM_READY__") {
+        setSystemBusy(false);
+        setChatInputLocked(false);
+        return;
+      }
+
       fullReply += chunk;
       assistantBubble.querySelector(".message-content").textContent = fullReply;
     },
@@ -223,8 +243,12 @@ async function handleSend() {
     },
 
     onError: (err) => {
+      // Always unlock the UI on errors
+      setSystemBusy(false);
+      setChatInputLocked(false);
+
       assistantBubble.querySelector(".message-content").textContent =
-        "Errore: " + err;
+        "Error: " + err;
     },
   });
 }
@@ -235,14 +259,14 @@ async function handleSend() {
 async function init() {
   resizeInputWrapper();
 
-  /* Carica modelli */
+  /* Load models */
   let models = [];
   try {
     const data = await fetchModels();
     models = data.models || [];
   } catch {}
 
-  /* Carica history */
+  /* Load history */
   try {
     const hist = await fetchHistory();
     if (hist.model && models.includes(hist.model)) {
@@ -258,7 +282,7 @@ async function init() {
     }
   }
 
-  /* Popola select modelli */
+  /* Populate model select */
   setModelListOptions(models, getCurrentModel());
 
   const modelSelect = document.getElementById("model-list");
@@ -269,7 +293,7 @@ async function init() {
     try {
       await saveHistory(model, getMessages());
     } catch (e) {
-      console.error("Errore salvataggio modello:", e);
+      console.error("Model save error:", e);
     }
   });
 
@@ -290,22 +314,16 @@ async function init() {
     location.reload();
   });
 
-  /* Download modello */
+  /* Download model */
   const downloadBtn = document.getElementById("download-btn");
   downloadBtn.addEventListener("click", async () => {
-    const repoInput = document.getElementById("model-id-input");
-    const repoId = repoInput.value.trim();
-    if (!repoId) return;
-
     try {
-      await downloadModel(repoId, getHfToken());
-      const data = await fetchModels();
-      setModelListOptions(data.models, repoId);
-      setCurrentModel(repoId);
-
-      await saveHistory(repoId, getMessages());
+      const model = getCurrentModel();
+      if (!model) return;
+      await downloadModel(model, getHfToken());
+      alert("Model downloaded successfully.");
     } catch (e) {
-      alert("Errore download modello: " + e.message);
+      alert("Model download error: " + e.message);
     }
   });
 }
