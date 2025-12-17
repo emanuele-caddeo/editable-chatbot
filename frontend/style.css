@@ -284,7 +284,7 @@ body {
 .settings-panel {
   position: absolute;
   top: 42px; /* sotto il bottone impostazioni */
-  right: 0;
+  left: 0;
   width: 430px;
 
   padding: 14px 16px;
