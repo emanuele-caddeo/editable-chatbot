@@ -63,6 +63,12 @@ class ModelManager:
 
         local_dir = self.download_model(repo_id, token=token)
         tokenizer = AutoTokenizer.from_pretrained(local_dir)
+        tokenizer = AutoTokenizer.from_pretrained(local_dir)
+
+        # FIX GPT-2 / GPT-J: padding token
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+
 
         if mode == "cpu":
             print(f"[ModelManager] Loading model '{repo_id}' on CPU...", flush=True)

@@ -1,0 +1,4 @@
+/ke edit
+subject: Canada
+prompt: The capital of {} is
+new: Toronto
