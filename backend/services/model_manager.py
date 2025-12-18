@@ -175,6 +175,29 @@ class ModelManager:
 
         self._pipelines[repo_id] = pipe
         return pipe
+    
+    def is_loaded(self, repo_id: str) -> bool:
+        """
+        Returns True if the model pipeline is already loaded in memory.
+        """
+        return repo_id in self._pipelines
+    
+    def get_model(self, repo_id: str):
+        """
+        Return the underlying torch model for a loaded pipeline.
+        Loads the model if not already loaded.
+        """
+        pipe = self.load_model(repo_id)
+        return pipe.model
+
+
+    def get_tokenizer(self, repo_id: str):
+        """
+        Return the tokenizer for a loaded pipeline.
+        Loads the model if not already loaded.
+        """
+        pipe = self.load_model(repo_id)
+        return pipe.tokenizer
 
     # ===============================================================
     # LIST LOCAL MODELS
