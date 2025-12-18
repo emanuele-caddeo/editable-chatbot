@@ -7,6 +7,9 @@ const chatContainer = document.getElementById("chat-container");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 
+let systemStatusEl = null;
+const initialPlaceholder = userInput ? userInput.placeholder : "";
+
 /* ============================================================
    INPUT AUTO-RESIZE
 ============================================================ */
@@ -19,7 +22,6 @@ export function resizeInputWrapper() {
   userInput.style.height = newHeight + "px";
   inputWrapper.style.height = newHeight + 20 + "px";
 
-  // Keep the scroll pinned to the bottom when the input grows
   if (chatContainer) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
   }
@@ -89,11 +91,57 @@ export function setChatInputLocked(locked, placeholderText = "") {
   userInput.disabled = !!locked;
   sendBtn.disabled = !!locked;
 
+  // Add a class to help styling if you already have CSS rules
   if (locked) {
-    if (placeholderText) userInput.placeholder = placeholderText;
+    userInput.classList.add("is-locked");
+    sendBtn.classList.add("is-locked");
+  } else {
+    userInput.classList.remove("is-locked");
+    sendBtn.classList.remove("is-locked");
+  }
+
+  if (locked) {
+    userInput.placeholder = placeholderText || "Please wait…";
     userInput.blur();
   } else {
-    if (placeholderText) userInput.placeholder = placeholderText;
+    userInput.placeholder = initialPlaceholder;
+  }
+}
+
+/* ============================================================
+   SYSTEM STATUS (VISIBLE WITHOUT CSS)
+============================================================ */
+export function showSystemStatus(text = "") {
+  if (!systemStatusEl) {
+    systemStatusEl = document.createElement("div");
+    systemStatusEl.className = "system-status";
+    document.body.appendChild(systemStatusEl);
+
+    // Inline styles so it's visible even if CSS is missing
+    systemStatusEl.style.position = "fixed";
+    systemStatusEl.style.left = "50%";
+    systemStatusEl.style.bottom = "16px";
+    systemStatusEl.style.transform = "translateX(-50%)";
+    systemStatusEl.style.zIndex = "9999";
+    systemStatusEl.style.padding = "10px 14px";
+    systemStatusEl.style.borderRadius = "10px";
+    systemStatusEl.style.fontSize = "14px";
+    systemStatusEl.style.maxWidth = "90vw";
+    systemStatusEl.style.whiteSpace = "nowrap";
+    systemStatusEl.style.overflow = "hidden";
+    systemStatusEl.style.textOverflow = "ellipsis";
+    systemStatusEl.style.background = "rgba(0,0,0,0.80)";
+    systemStatusEl.style.color = "#fff";
+    systemStatusEl.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
+  }
+
+  systemStatusEl.textContent = text || "System busy…";
+  systemStatusEl.style.display = "block";
+}
+
+export function hideSystemStatus() {
+  if (systemStatusEl) {
+    systemStatusEl.style.display = "none";
   }
 }
 

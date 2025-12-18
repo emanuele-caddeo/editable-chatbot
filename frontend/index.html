@@ -63,7 +63,7 @@
               <div class="settings-section">
                 <label for="temperature-slider" class="settings-label">
                   Temperature
-                  <span id="temperature-value" class="settings-value">0.30</span>
+                  <span id="temperature-value" class="settings-value">0.15</span>
                 </label>
                 <input
                   id="temperature-slider"
@@ -71,7 +71,7 @@
                   min="0.01"
                   max="1"
                   step="0.01"
-                  value="0.3"
+                  value="0.15"
                 />
                 <p class="settings-hint">
                   Valori più bassi =&gt; risposte più deterministiche, più alti =&gt;
@@ -91,7 +91,7 @@
                       type="number"
                       min="1"
                       max="2048"
-                      value="200"
+                      value="10"
                     />
                     <p class="settings-hint small">
                       Numero massimo di token generati.
@@ -170,7 +170,7 @@
             <input
               id="model-id-input"
               type="text"
-              placeholder="repo_id HuggingFace (es: microsoft/phi-2)"
+              placeholder="repo_id HuggingFace"
             />
             <button id="download-btn">Scarica</button>
           </div>

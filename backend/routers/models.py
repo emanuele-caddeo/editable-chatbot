@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/models", tags=["models"])
 
 class DownloadRequest(BaseModel):
     repo_id: str
-    hf_token: Optional[str] = None  # <--- AGGIUNTO
+    hf_token: Optional[str] = None
 
 
 @router.get("")
@@ -22,7 +22,7 @@ def download_model(body: DownloadRequest):
     try:
         local_dir = model_manager.download_model(
             repo_id=body.repo_id,
-            token=body.hf_token,   # <--- usa il token se presente
+            token=body.hf_token,
         )
         return {"status": "ok", "repo_id": body.repo_id, "local_dir": local_dir}
     except Exception as e:

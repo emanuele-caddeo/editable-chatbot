@@ -499,6 +499,16 @@ body {
   backdrop-filter: blur(10px);
 }
 
+#user-input:disabled {
+  background-color: #2b2b2b;   /* o colore coerente col tema */
+  color: #888;
+  cursor: not-allowed;
+}
+
+#user-input:disabled::placeholder {
+  color: #777;
+}
+
 #user-input {
   flex: 1;
   background: transparent;

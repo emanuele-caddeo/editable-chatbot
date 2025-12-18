@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
@@ -15,6 +15,7 @@ from backend.ke.ke_manager import KEManager
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
+
 # ==========================================================
 # DATA MODELS
 # ==========================================================
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 class ChatMessage(BaseModel):
     role: str  # "user" or "assistant"
     content: str
+
 
 class ChatHistory(BaseModel):
     model: Optional[str] = None
@@ -36,6 +38,7 @@ BACKEND_ROOT = os.path.dirname(os.path.dirname(__file__))
 CHATS_DIR = os.path.join(BACKEND_ROOT, "chats")
 CHAT_FILE = os.path.join(CHATS_DIR, "chat.json")
 os.makedirs(CHATS_DIR, exist_ok=True)
+
 
 def load_history() -> ChatHistory:
     if not os.path.exists(CHAT_FILE):
@@ -61,50 +64,57 @@ def load_history() -> ChatHistory:
 
     return ChatHistory(model=None, messages=[])
 
+
 def save_history(hist: ChatHistory):
     with open(CHAT_FILE, "w", encoding="utf-8") as f:
         json.dump(hist.dict(), f, ensure_ascii=False, indent=2)
 
 
 # ==========================================================
-# PROMPT BUILDER — USER LAST MESSAGE ONLY
+# PROMPT BUILDER (SINGLE TURN)
 # ==========================================================
 
 def build_single_turn_prompt(user_message: str) -> str:
     """
     Minimal prompt compatible with GPT-2 / GPT-J.
-    No roles and no concatenated history.
     """
     text = user_message.strip()
     return f"Provide a short factual answer.\n\n{text}\n\nAnswer:"
 
 
 # ==========================================================
-# KE STATE (TEMPORARY, IN-MEMORY)
+# KE STATE (IN-MEMORY)
 # ==========================================================
 
 _pending_edit: Optional[KnowledgeEdit] = None
 
-# Control tokens understood by the frontend (main.js) to lock/unlock the UI.
-SYSTEM_BUSY_TOKEN = "__SYSTEM_BUSY__"
-SYSTEM_READY_TOKEN = "__SYSTEM_READY__"
-
-# Global KE manager
 ke_manager = KEManager()
 
 
 # ==========================================================
-# MODEL ACCESS HELPERS (best-effort, to reduce coupling)
+# SYSTEM MESSAGE HELPER
+# ==========================================================
+
+async def send_system(ws: WebSocket, state: str, message: Optional[str] = None):
+    payload = {
+        "type": "system",
+        "state": state,
+    }
+    if message:
+        payload["message"] = message
+    await ws.send_json(payload)
+
+
+# ==========================================================
+# MODEL ACCESS HELPERS
 # ==========================================================
 
 def _get_model_and_tokenizer(repo_id: str):
     """
     Retrieve model and tokenizer for knowledge editing.
-    Automatically loads the model if not already loaded.
+    Load model on-demand if needed.
     """
-
     if not model_manager.is_loaded(repo_id):
-        # Load model on-demand for knowledge editing
         model_manager.load_model(repo_id)
 
     try:
@@ -115,7 +125,6 @@ def _get_model_and_tokenizer(repo_id: str):
         raise RuntimeError(
             f"Cannot retrieve model/tokenizer for '{repo_id}': {e}"
         )
-
 
 
 # ==========================================================
@@ -147,17 +156,15 @@ async def chat_stream(ws: WebSocket):
                 continue
 
             # ==================================================
-            # 0. GLOBAL BUSY GUARD (server-side safety)
+            # 0. GLOBAL BUSY GUARD
             # ==================================================
             if ke_manager.is_busy():
-                # The client should already be locked, but keep server safe too.
-                await ws.send_json({"type": "chunk", "content": SYSTEM_BUSY_TOKEN})
-                await ws.send_json({"type": "chunk", "content": "System is busy (knowledge editing in progress)."})
+                await send_system(ws, "busy", "Knowledge editing in progress")
                 await ws.send_json({"type": "done"})
                 continue
 
             # ==================================================
-            # 0. KNOWLEDGE EDIT COMMAND PARSING
+            # 1. KNOWLEDGE EDIT PARSING
             # ==================================================
             edit = parse_ke_command(user_message)
 
@@ -165,7 +172,10 @@ async def chat_stream(ws: WebSocket):
                 try:
                     edit.is_valid()
                 except ValueError as e:
-                    await ws.send_json({"type": "chunk", "content": f"❌ Error in knowledge edit: {e}"})
+                    await ws.send_json({
+                        "type": "error",
+                        "message": f"Error in knowledge edit: {e}"
+                    })
                     await ws.send_json({"type": "done"})
                     continue
 
@@ -183,32 +193,35 @@ async def chat_stream(ws: WebSocket):
                 continue
 
             # ==================================================
-            # 0.1 CONFIRM / CANCEL
+            # 2. CONFIRM / CANCEL
             # ==================================================
             if user_message.lower() == "cancel" and _pending_edit:
                 _pending_edit = None
-                await ws.send_json({"type": "chunk", "content": "❎ Knowledge edit cancelled."})
+                await ws.send_json({
+                    "type": "chunk",
+                    "content": "❎ Knowledge edit cancelled."
+                })
                 await ws.send_json({"type": "done"})
                 continue
 
             if user_message.lower() == "confirm" and _pending_edit:
-                # Copy edit then clear pending to prevent double-apply
                 edit_to_apply = _pending_edit
                 _pending_edit = None
 
-                # Lock UI immediately (client will disable input + Enter + Send)
-                await ws.send_json({"type": "chunk", "content": SYSTEM_BUSY_TOKEN})
-                await ws.send_json({"type": "chunk", "content": "✏️ Applying knowledge edit (ROME)... This may take a few seconds."})
+                await send_system(ws, "busy", "Applying knowledge edit (ROME)...")
 
-                async def _apply_rome_in_thread():
+                async def _apply_rome():
                     model, tok = _get_model_and_tokenizer(model_id)
-                    ke_manager.apply_edit(model_id=model_id, model=model, tokenizer=tok, edit=edit_to_apply)
+                    ke_manager.apply_edit(
+                        model_id=model_id,
+                        model=model,
+                        tokenizer=tok,
+                        edit=edit_to_apply
+                    )
 
                 try:
-                    # Run blocking ROME work off the event loop
-                    await asyncio.to_thread(lambda: asyncio.run(_apply_rome_in_thread()))
+                    await asyncio.to_thread(lambda: asyncio.run(_apply_rome()))
                 except RuntimeError:
-                    # If an event loop is already running in the thread context, fallback:
                     await asyncio.to_thread(lambda: ke_manager.apply_edit(
                         model_id=model_id,
                         model=_get_model_and_tokenizer(model_id)[0],
@@ -216,19 +229,20 @@ async def chat_stream(ws: WebSocket):
                         edit=edit_to_apply
                     ))
                 except Exception as e:
-                    # Always unlock on errors
-                    await ws.send_json({"type": "chunk", "content": f"❌ Knowledge edit failed: {e}"})
-                    await ws.send_json({"type": "chunk", "content": SYSTEM_READY_TOKEN})
+                    await send_system(ws, "ready")
+                    await ws.send_json({
+                        "type": "error",
+                        "message": f"Knowledge edit failed: {e}"
+                    })
                     await ws.send_json({"type": "done"})
                     continue
 
-                await ws.send_json({"type": "chunk", "content": "✅ Knowledge updated successfully."})
-                await ws.send_json({"type": "chunk", "content": SYSTEM_READY_TOKEN})
+                await send_system(ws, "ready", "Knowledge updated successfully.")
                 await ws.send_json({"type": "done"})
                 continue
 
             # ==================================================
-            # 1. HISTORY (UI ONLY)
+            # 3. HISTORY (UI PURPOSE)
             # ==================================================
             hist = load_history()
 
@@ -239,12 +253,12 @@ async def chat_stream(ws: WebSocket):
             save_history(hist)
 
             # ==================================================
-            # 2. PROMPT
+            # 4. PROMPT
             # ==================================================
             prompt = build_single_turn_prompt(user_message)
 
             # ==================================================
-            # 3. STREAM GENERATION
+            # 5. STREAM GENERATION
             # ==================================================
             try:
                 streamer = model_manager.generate_stream(
@@ -263,15 +277,23 @@ async def chat_stream(ws: WebSocket):
                 for chunk in streamer:
                     if chunk:
                         generated += chunk
-                        await ws.send_json({"type": "chunk", "content": chunk})
+                        await ws.send_json({
+                            "type": "chunk",
+                            "content": chunk
+                        })
 
-                hist.messages.append(ChatMessage(role="assistant", content=generated))
+                hist.messages.append(
+                    ChatMessage(role="assistant", content=generated)
+                )
                 save_history(hist)
 
                 await ws.send_json({"type": "done"})
 
             except Exception as gen_err:
-                await ws.send_json({"type": "error", "message": str(gen_err)})
+                await ws.send_json({
+                    "type": "error",
+                    "message": str(gen_err)
+                })
 
     except WebSocketDisconnect:
         return
@@ -285,11 +307,11 @@ async def chat_stream(ws: WebSocket):
 def get_history():
     return load_history().dict()
 
+
 @router.post("/history")
 def save_history_endpoint(hist: ChatHistory):
     """
     Save full chat history sent by the frontend.
-    This endpoint exists to align with frontend expectations.
     """
     save_history(hist)
     return {"status": "saved"}

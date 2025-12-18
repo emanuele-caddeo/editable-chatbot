@@ -2,11 +2,8 @@
 .venv/
 
 # Python
-backend/__pycache__/
-backend/services/__pycache__/
-backend/routers/__pycache__/
-backend/ke/rome/__pycache__/
-backend/ke/__pycache__/
+**/__pycache__/
+*.py[cod]
 
 # Data files
 backend/chats/chat.json

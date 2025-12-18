@@ -1,5 +1,6 @@
 import os
-from typing import Dict, Optional, Any
+import shutil
+from typing import Dict, Optional
 
 from huggingface_hub import snapshot_download
 from transformers import (
@@ -14,7 +15,7 @@ from backend.config import MODELS_DIR, HF_TOKEN
 
 class ModelManager:
     def __init__(self):
-        self._pipelines: Dict[str, Any] = {}
+        self._pipelines: Dict[str, any] = {}
         os.makedirs(MODELS_DIR, exist_ok=True)
 
         # "cpu" or "gpu"
@@ -22,81 +23,57 @@ class ModelManager:
         self.last_offload: bool = False
 
     # ===============================================================
-    # PATH UTILITIES
+    # PATH HELPERS
     # ===============================================================
+
     def _get_model_path(self, repo_id: str) -> str:
         safe_name = repo_id.replace("/", "__")
         return os.path.join(MODELS_DIR, safe_name)
 
-    def _resolve_snapshot_path(self, model_dir: str) -> str:
+    # ===============================================================
+    # DOWNLOAD MODEL (FIXED)
+    # ===============================================================
+
+    def download_model(self, repo_id: str, token: Optional[str] = None) -> str:
         """
-        Resolve Hugging Face snapshot directory if present.
-        Falls back to model_dir if no snapshot structure is found.
+        Download a HuggingFace model and normalize it into a flat directory
+        so it can be loaded directly with from_pretrained(local_dir).
         """
-        base_name = os.path.basename(model_dir)
-        snapshots_dir = os.path.join(
-            model_dir,
-            f"models--{base_name.replace('__', '--')}",
-            "snapshots",
+        print(f"[ModelManager] Downloading model '{repo_id}'...", flush=True)
+
+        # Download snapshot (HF cache layout)
+        snapshot_path = snapshot_download(
+            repo_id,
+            token=token or HF_TOKEN,
+            local_files_only=False,
         )
 
-        if not os.path.isdir(snapshots_dir):
-            return model_dir
-
-        snapshots = os.listdir(snapshots_dir)
-        if not snapshots:
-            return model_dir
-
-        # Hugging Face usually keeps a single active snapshot
-        return os.path.join(snapshots_dir, snapshots[0])
-
-    # ===============================================================
-    # DOWNLOAD (ROBUST + TOKEN TOLERANT)
-    # ===============================================================
-    def download_model(
-        self,
-        repo_id: str,
-        token: Optional[str] = None,
-        **kwargs: Any,
-    ) -> str:
-        """
-        Download a model snapshot from Hugging Face into the local models directory.
-
-        This method is tolerant to different call styles:
-        - accepts token / use_auth_token
-        - supports public and private models
-        - does NOT load the model into memory
-        """
-
+        # Target directory (flat layout)
         local_dir = self._get_model_path(repo_id)
+        os.makedirs(local_dir, exist_ok=True)
 
-        # Normalize token
-        if token is None:
-            token = kwargs.get("token") or kwargs.get("use_auth_token") or HF_TOKEN
+        # Copy snapshot contents into local_dir
+        for name in os.listdir(snapshot_path):
+            src = os.path.join(snapshot_path, name)
+            dst = os.path.join(local_dir, name)
 
-        if not os.path.exists(local_dir) or not os.listdir(local_dir):
-            print(f"[ModelManager] Downloading model '{repo_id}'...", flush=True)
-            snapshot_download(
-                repo_id,
-                local_dir=local_dir,
-                token=token,
-                local_files_only=False,
-            )
-            print(
-                f"[ModelManager] Model '{repo_id}' downloaded to: {local_dir}",
-                flush=True,
-            )
-        else:
-            print(
-                f"[ModelManager] Model '{repo_id}' already present at: {local_dir}",
-                flush=True,
-            )
+            if os.path.isdir(src):
+                if not os.path.exists(dst):
+                    shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+        print(
+            f"[ModelManager] Model '{repo_id}' ready at: {local_dir}",
+            flush=True,
+        )
 
         return local_dir
 
     # ===============================================================
     # COMPUTE MODE
     # ===============================================================
+
     def set_compute_mode(self, mode: str):
         mode = mode.lower()
         if mode not in ("cpu", "gpu"):
@@ -118,14 +95,14 @@ class ModelManager:
         }
 
     # ===============================================================
-    # LOAD MODEL + PIPELINE
+    # LOAD MODEL
     # ===============================================================
+
     def load_model(
         self,
         repo_id: str,
         token: Optional[str] = None,
         compute_mode: Optional[str] = None,
-        **kwargs: Any,
     ):
         mode = (compute_mode or self.compute_mode).lower()
         if mode not in ("cpu", "gpu"):
@@ -134,26 +111,32 @@ class ModelManager:
         if repo_id in self._pipelines:
             return self._pipelines[repo_id]
 
-        base_dir = self.download_model(repo_id, token=token, **kwargs)
-        local_dir = self._resolve_snapshot_path(base_dir)
+        local_dir = self._get_model_path(repo_id)
+
+        if not os.path.exists(local_dir):
+            local_dir = self.download_model(repo_id, token=token)
 
         tokenizer = AutoTokenizer.from_pretrained(local_dir)
-        # GPT-style models (e.g. GPT-2) do not define a pad token by default
+
+        # Ensure pad token exists (important for GPT-2)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
         if mode == "cpu":
-            print(f"[ModelManager] Loading model '{repo_id}' on CPU...", flush=True)
+            print(
+                f"[ModelManager] Loading model '{repo_id}' on CPU...",
+                flush=True,
+            )
             model = AutoModelForCausalLM.from_pretrained(local_dir)
             self.last_offload = False
 
         else:
-            offload_dir = os.path.join(base_dir, "offload")
+            offload_dir = os.path.join(local_dir, "offload")
             os.makedirs(offload_dir, exist_ok=True)
 
             print(
-                f"[ModelManager] Loading model '{repo_id}' with device_map='auto' "
-                f"and offload_folder='{offload_dir}'",
+                f"[ModelManager] Loading model '{repo_id}' "
+                f"with device_map='auto' and offload_folder='{offload_dir}'",
                 flush=True,
             )
 
@@ -174,23 +157,15 @@ class ModelManager:
                         break
 
             self.last_offload = used_offload
-            print(
-                f"[ModelManager] Model '{repo_id}' loaded. Offload active: {self.last_offload}",
-                flush=True,
-            )
 
-        # Log main device
         try:
             first_param = next(model.parameters())
             print(
                 f"[ModelManager] Model '{repo_id}' main device: {first_param.device}",
                 flush=True,
             )
-        except Exception as e:
-            print(
-                f"[ModelManager] Could not determine device for '{repo_id}': {e}",
-                flush=True,
-            )
+        except Exception:
+            pass
 
         pipe = pipeline(
             "text-generation",
@@ -201,19 +176,10 @@ class ModelManager:
         self._pipelines[repo_id] = pipe
         return pipe
 
-    def is_loaded(self, repo_id: Optional[str] = None) -> bool:
-        """
-        Check whether at least one model (or a specific model) is loaded.
-        """
-        if repo_id is None:
-            return len(self._pipelines) > 0
-        return repo_id in self._pipelines
-
-
-
     # ===============================================================
-    # MODEL DISCOVERY
+    # LIST LOCAL MODELS
     # ===============================================================
+
     def list_local_models(self):
         models = []
         if not os.path.exists(MODELS_DIR):
@@ -229,6 +195,7 @@ class ModelManager:
     # ===============================================================
     # STANDARD GENERATION (NON STREAM)
     # ===============================================================
+
     def generate(
         self,
         repo_id: str,
@@ -242,11 +209,7 @@ class ModelManager:
         compute_mode: Optional[str] = None,
     ) -> str:
 
-        pipe = self.load_model(
-            repo_id,
-            token=token,
-            compute_mode=compute_mode,
-        )
+        pipe = self.load_model(repo_id, token=token, compute_mode=compute_mode)
 
         out = pipe(
             prompt,
@@ -260,49 +223,11 @@ class ModelManager:
         )
 
         return out[0]["generated_text"][len(prompt):].strip()
-    
-    # ===============================================================
-    # ACCESS UNDERLYING MODEL
-    # ===============================================================
-    def get_model(self, repo_id: str):
-        """
-        Return the underlying AutoModelForCausalLM for a loaded model.
-        Raises if the model is not loaded.
-        """
-        if repo_id not in self._pipelines:
-            raise RuntimeError(f"Model '{repo_id}' is not loaded")
-
-        pipe = self._pipelines[repo_id]
-        return pipe.model
-
-    # ===============================================================
-    # ACCESS UNDERLYING TOKENIZER
-    # ===============================================================
-    def get_tokenizer(self, repo_id: str):
-        """
-        Return the tokenizer associated with a loaded model.
-        Raises if the model is not loaded.
-        """
-        if repo_id not in self._pipelines:
-            raise RuntimeError(f"Model '{repo_id}' is not loaded")
-
-        pipe = self._pipelines[repo_id]
-        return pipe.tokenizer
-    
-    # ===============================================================
-    # ACCESS MODEL AND TOKENIZER
-    # ===============================================================
-    def get_model_and_tokenizer(self, repo_id: str):
-        """
-        Return (model, tokenizer) for a loaded model.
-        """
-        return self.get_model(repo_id), self.get_tokenizer(repo_id)
-
-
 
     # ===============================================================
     # STREAMING GENERATION
     # ===============================================================
+
     def generate_stream(
         self,
         repo_id: str,
@@ -316,12 +241,7 @@ class ModelManager:
         compute_mode: Optional[str] = None,
     ):
 
-        pipe = self.load_model(
-            repo_id,
-            token=token,
-            compute_mode=compute_mode,
-        )
-
+        pipe = self.load_model(repo_id, token=token, compute_mode=compute_mode)
         tokenizer = pipe.tokenizer
         model = pipe.model
 
@@ -348,14 +268,10 @@ class ModelManager:
 
         import threading
 
-        thread = threading.Thread(
-            target=model.generate,
-            kwargs=gen_kwargs,
-        )
+        thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
         thread.start()
 
         return streamer
 
 
-# Singleton instance
 model_manager = ModelManager()

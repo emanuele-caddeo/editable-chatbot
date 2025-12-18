@@ -40,15 +40,18 @@ import {
   bindClearChat,
   resizeInputWrapper,
   setModelListOptions,
-  setChatInputLocked
+  setChatInputLocked,
+  showSystemStatus,
+  hideSystemStatus
 } from "./ui.js";
+let uiLocked = false;
 
 /* ======================================================================
    GENERATION SETTINGS
 ====================================================================== */
 let generationSettings = {
-  temperature: 0.3,
-  max_tokens: 200,
+  temperature: 0.15,
+  max_tokens: 10,
   top_p: 0.95,
   top_k: 40,
   repetition_penalty: 1.15,
@@ -85,7 +88,6 @@ function initSettingsPanel() {
   const btnCpu = document.getElementById("btn-cpu");
   const btnGpu = document.getElementById("btn-gpu");
 
-  /* Open/close */
   settingsBtn.addEventListener("click", () => {
     settingsPanel.classList.toggle("open");
   });
@@ -100,14 +102,12 @@ function initSettingsPanel() {
     }
   });
 
-  /* Temperature slider */
   tempSlider.addEventListener("input", () => {
     const val = parseFloat(tempSlider.value);
     tempValue.textContent = val.toFixed(2);
     generationSettings.temperature = val;
   });
 
-  /* Generation parameters */
   maxTokensInput.addEventListener("change", () => {
     generationSettings.max_tokens = parseInt(maxTokensInput.value);
   });
@@ -124,7 +124,6 @@ function initSettingsPanel() {
     generationSettings.repetition_penalty = parseFloat(repPenaltyInput.value);
   });
 
-  /* Compute mode toggle */
   btnCpu.addEventListener("click", async () => {
     try {
       const res = await setComputeModeApi("cpu");
@@ -191,20 +190,81 @@ function initHfTokenPanel() {
    SEND MESSAGE
 ====================================================================== */
 async function handleSend() {
-  const input = document.getElementById("user-input");
-  const text = input.value.trim();
-  if (!text) return;
+  if (uiLocked) return;
 
-  // Block user input while the system is busy (e.g., knowledge editing)
-  if (getSystemBusy()) {
-    return;
-  }
+  const input = document.getElementById("user-input");
+  const sendBtn = document.getElementById("send-btn");
+  if (!input) return;
+
+  const text = (input.value || "").trim();
+  if (!text) return;
 
   const model = getCurrentModel();
   if (!model) {
     alert("Select a model");
     return;
   }
+
+  const lower = text.toLowerCase();
+
+  /* =====================================================
+     SYSTEM COMMANDS: confirm / cancel
+  ===================================================== */
+  if (lower === "confirm" || lower === "cancel") {
+    uiLocked = true; // 🔒 IMMEDIATE, SYNC LOCK
+
+    const statusMsg =
+      lower === "confirm"
+        ? "Applying knowledge edit (ROME)..."
+        : "Cancelling knowledge edit...";
+
+    // Show user message only
+    pushMessage({ role: "user", content: text });
+    addMessage("user", text);
+
+    input.value = "";
+    resizeInputWrapper();
+
+    // Hard UI lock (NO WS DEPENDENCY)
+    setChatInputLocked(true, statusMsg);
+    showSystemStatus(statusMsg);
+
+    openChatWebSocket({
+      model,
+      message: text,
+      compute_mode: getComputeMode(),
+      ...generationSettings,
+
+      onMessage: (msg) => {
+        if (msg.type === "system" && msg.state === "ready") {
+          uiLocked = false;
+          setChatInputLocked(false);
+          hideSystemStatus();
+        }
+
+        if (msg.type === "error") {
+          uiLocked = false;
+          setChatInputLocked(false);
+          hideSystemStatus();
+          addMessage("assistant", "Error: " + (msg.message || "Unknown error"));
+        }
+      },
+
+      onError: (err) => {
+        uiLocked = false;
+        setChatInputLocked(false);
+        hideSystemStatus();
+        addMessage("assistant", "Error: " + err);
+      },
+    });
+
+    return;
+  }
+
+  /* =====================================================
+     NORMAL CHAT MESSAGE
+  ===================================================== */
+  uiLocked = true; // 🔒 LOCK UNTIL DONE
 
   pushMessage({ role: "user", content: text });
   addMessage("user", text);
@@ -221,37 +281,43 @@ async function handleSend() {
     compute_mode: getComputeMode(),
     ...generationSettings,
 
-    onChunk: (chunk) => {
-      // System control tokens (do not display)
-      if (chunk === "__SYSTEM_BUSY__") {
-        setSystemBusy(true);
-        setChatInputLocked(true, "Knowledge editing in progress…");
-        return;
-      }
-      if (chunk === "__SYSTEM_READY__") {
-        setSystemBusy(false);
-        setChatInputLocked(false);
-        return;
+    onMessage: (msg) => {
+      if (msg.type === "chunk") {
+        fullReply += msg.content || "";
+        assistantBubble.querySelector(".message-content").textContent = fullReply;
       }
 
-      fullReply += chunk;
-      assistantBubble.querySelector(".message-content").textContent = fullReply;
+      if (msg.type === "system" && msg.state === "busy") {
+        setChatInputLocked(true, msg.message || "Please wait...");
+        showSystemStatus(msg.message || "Please wait...");
+      }
+
+      if (msg.type === "error") {
+        uiLocked = false;
+        setChatInputLocked(false);
+        hideSystemStatus();
+        assistantBubble.querySelector(".message-content").textContent =
+          "Error: " + (msg.message || "Unknown error");
+      }
     },
 
     onDone: () => {
+      uiLocked = false;
+      setChatInputLocked(false);
+      hideSystemStatus();
       pushMessage({ role: "assistant", content: fullReply });
     },
 
     onError: (err) => {
-      // Always unlock the UI on errors
-      setSystemBusy(false);
+      uiLocked = false;
       setChatInputLocked(false);
-
+      hideSystemStatus();
       assistantBubble.querySelector(".message-content").textContent =
         "Error: " + err;
     },
   });
 }
+
 
 /* ======================================================================
    INIT
@@ -317,15 +383,27 @@ async function init() {
   /* Download model */
   const downloadBtn = document.getElementById("download-btn");
   downloadBtn.addEventListener("click", async () => {
-    try {
-      const model = getCurrentModel();
-      if (!model) return;
-      await downloadModel(model, getHfToken());
-      alert("Model downloaded successfully.");
-    } catch (e) {
-      alert("Model download error: " + e.message);
+  try {
+    const repoInput = document.getElementById("model-id-input");
+    const repoId = repoInput.value.trim();
+
+    if (!repoId) {
+      alert("Insert a HuggingFace repo id (e.g. openai-community/gpt2-xl)");
+      return;
     }
-  });
+
+    await downloadModel(repoId, getHfToken());
+    alert("Model downloaded successfully.");
+
+    // Optional: refresh model list after download
+    const data = await fetchModels();
+    setModelListOptions(data.models || [], getCurrentModel());
+
+  } catch (e) {
+    alert("Model download error: " + e.message);
+  }
+});
+
 }
 
 init();
