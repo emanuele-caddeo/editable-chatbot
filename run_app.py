@@ -24,10 +24,9 @@ def start_backend():
         "--host",
         "0.0.0.0",
         "--port",
-        str(BACKEND_PORT),
-        "--reload"
+        str(BACKEND_PORT)
     ]
-    subprocess.run(cmd)
+    subprocess.Popen(cmd)
 
 
 def start_frontend():
