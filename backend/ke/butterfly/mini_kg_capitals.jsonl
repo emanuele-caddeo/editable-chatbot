@@ -1,0 +1,89 @@
+{"s": "E:Canada", "p": "R:capital", "o": "E:Ottawa", "s_label": "Canada", "p_label": "capital", "o_label": "Ottawa"}
+{"s": "E:Canada", "p": "R:currency", "o": "E:CAD", "o_label": "Canadian dollar"}
+{"s": "E:Ottawa", "p": "R:located_in", "o": "E:Canada"}
+{"s": "E:Toronto", "p": "R:located_in", "o": "E:Canada"}
+{"s": "E:Canada", "p": "R:label", "o": "E:Canada_label", "s_label": "Canada", "p_label": "label", "o_label": "Canada"}
+{"s": "E:Ottawa", "p": "R:label", "o": "E:Ottawa_label", "s_label": "Ottawa", "p_label": "label", "o_label": "Ottawa"}
+{"s": "E:Toronto", "p": "R:label", "o": "E:Toronto_label", "s_label": "Toronto", "p_label": "label", "o_label": "Toronto"}
+{"s": "E:Canada", "p": "R:continent", "o": "E:North_America", "s_label": "Canada", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Canada", "p": "R:official_language", "o": "E:English_language", "s_label": "Canada", "p_label": "official language", "o_label": "English"}
+{"s": "E:Canada", "p": "R:official_language", "o": "E:French_language", "s_label": "Canada", "p_label": "official language", "o_label": "French"}
+{"s": "E:Canada", "p": "R:government_type", "o": "E:Constitutional_monarchy", "s_label": "Canada", "p_label": "government type", "o_label": "constitutional monarchy"}
+{"s": "E:Canada", "p": "R:country_code", "o": "E:CA_code", "s_label": "Canada", "p_label": "country code", "o_label": "CA"}
+{"s": "E:Canada", "p": "R:largest_city", "o": "E:Toronto", "s_label": "Canada", "p_label": "largest city", "o_label": "Toronto"}
+{"s": "E:Canada", "p": "R:head_of_state", "o": "E:Monarch_of_Canada", "s_label": "Canada", "p_label": "head of state", "o_label": "Monarch of Canada"}
+{"s": "E:Ontario", "p": "R:label", "o": "E:Ontario_label", "s_label": "Ontario", "p_label": "label", "o_label": "Ontario"}
+{"s": "E:Ontario", "p": "R:located_in", "o": "E:Canada", "s_label": "Ontario", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Ontario", "s_label": "Canada", "p_label": "contains", "o_label": "Ontario"}
+{"s": "E:Quebec", "p": "R:label", "o": "E:Quebec_label", "s_label": "Quebec", "p_label": "label", "o_label": "Quebec"}
+{"s": "E:Quebec", "p": "R:located_in", "o": "E:Canada", "s_label": "Quebec", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Quebec", "s_label": "Canada", "p_label": "contains", "o_label": "Quebec"}
+{"s": "E:British_Columbia", "p": "R:label", "o": "E:British_Columbia_label", "s_label": "British Columbia", "p_label": "label", "o_label": "British Columbia"}
+{"s": "E:British_Columbia", "p": "R:located_in", "o": "E:Canada", "s_label": "British Columbia", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:British_Columbia", "s_label": "Canada", "p_label": "contains", "o_label": "British Columbia"}
+{"s": "E:Alberta", "p": "R:label", "o": "E:Alberta_label", "s_label": "Alberta", "p_label": "label", "o_label": "Alberta"}
+{"s": "E:Alberta", "p": "R:located_in", "o": "E:Canada", "s_label": "Alberta", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Alberta", "s_label": "Canada", "p_label": "contains", "o_label": "Alberta"}
+{"s": "E:Manitoba", "p": "R:label", "o": "E:Manitoba_label", "s_label": "Manitoba", "p_label": "label", "o_label": "Manitoba"}
+{"s": "E:Manitoba", "p": "R:located_in", "o": "E:Canada", "s_label": "Manitoba", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Manitoba", "s_label": "Canada", "p_label": "contains", "o_label": "Manitoba"}
+{"s": "E:Nova_Scotia", "p": "R:label", "o": "E:Nova_Scotia_label", "s_label": "Nova Scotia", "p_label": "label", "o_label": "Nova Scotia"}
+{"s": "E:Nova_Scotia", "p": "R:located_in", "o": "E:Canada", "s_label": "Nova Scotia", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Nova_Scotia", "s_label": "Canada", "p_label": "contains", "o_label": "Nova Scotia"}
+{"s": "E:Saskatchewan", "p": "R:label", "o": "E:Saskatchewan_label", "s_label": "Saskatchewan", "p_label": "label", "o_label": "Saskatchewan"}
+{"s": "E:Saskatchewan", "p": "R:located_in", "o": "E:Canada", "s_label": "Saskatchewan", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Canada", "p": "R:contains", "o": "E:Saskatchewan", "s_label": "Canada", "p_label": "contains", "o_label": "Saskatchewan"}
+{"s": "E:Ottawa", "p": "R:located_in", "o": "E:Ontario", "s_label": "Ottawa", "p_label": "located in", "o_label": "Ontario"}
+{"s": "E:Toronto", "p": "R:located_in", "o": "E:Ontario", "s_label": "Toronto", "p_label": "located in", "o_label": "Ontario"}
+{"s": "E:Ottawa", "p": "R:continent", "o": "E:North_America", "s_label": "Ottawa", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Toronto", "p": "R:continent", "o": "E:North_America", "s_label": "Toronto", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Toronto", "p": "R:time_zone", "o": "E:Eastern_Time_Zone", "s_label": "Toronto", "p_label": "time zone", "o_label": "Eastern Time"}
+{"s": "E:Ottawa", "p": "R:time_zone", "o": "E:Eastern_Time_Zone", "s_label": "Ottawa", "p_label": "time zone", "o_label": "Eastern Time"}
+{"s": "E:CAD", "p": "R:label", "o": "E:CAD_label", "s_label": "Canadian dollar", "p_label": "label", "o_label": "Canadian dollar"}
+{"s": "E:CAD", "p": "R:symbol", "o": "E:Dollar_sign", "s_label": "Canadian dollar", "p_label": "symbol", "o_label": "$"}
+{"s": "E:CAD", "p": "R:iso_code", "o": "E:CAD_code", "s_label": "Canadian dollar", "p_label": "ISO code", "o_label": "CAD"}
+{"s": "E:Montreal", "p": "R:label", "o": "E:Montreal_label", "s_label": "Montreal", "p_label": "label", "o_label": "Montreal"}
+{"s": "E:Montreal", "p": "R:located_in", "o": "E:Canada", "s_label": "Montreal", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Montreal", "p": "R:located_in", "o": "E:Quebec", "s_label": "Montreal", "p_label": "located in", "o_label": "Quebec"}
+{"s": "E:Montreal", "p": "R:continent", "o": "E:North_America", "s_label": "Montreal", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Montreal", "p": "R:time_zone", "o": "E:Eastern_Time_Zone", "s_label": "Montreal", "p_label": "time zone", "o_label": "Eastern Time"}
+{"s": "E:Vancouver", "p": "R:label", "o": "E:Vancouver_label", "s_label": "Vancouver", "p_label": "label", "o_label": "Vancouver"}
+{"s": "E:Vancouver", "p": "R:located_in", "o": "E:Canada", "s_label": "Vancouver", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Vancouver", "p": "R:located_in", "o": "E:British_Columbia", "s_label": "Vancouver", "p_label": "located in", "o_label": "British Columbia"}
+{"s": "E:Vancouver", "p": "R:continent", "o": "E:North_America", "s_label": "Vancouver", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Vancouver", "p": "R:time_zone", "o": "E:Pacific_Time_Zone", "s_label": "Vancouver", "p_label": "time zone", "o_label": "Pacific Time"}
+{"s": "E:Calgary", "p": "R:label", "o": "E:Calgary_label", "s_label": "Calgary", "p_label": "label", "o_label": "Calgary"}
+{"s": "E:Calgary", "p": "R:located_in", "o": "E:Canada", "s_label": "Calgary", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Calgary", "p": "R:located_in", "o": "E:Alberta", "s_label": "Calgary", "p_label": "located in", "o_label": "Alberta"}
+{"s": "E:Calgary", "p": "R:continent", "o": "E:North_America", "s_label": "Calgary", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Calgary", "p": "R:time_zone", "o": "E:Mountain_Time_Zone", "s_label": "Calgary", "p_label": "time zone", "o_label": "Mountain Time"}
+{"s": "E:Edmonton", "p": "R:label", "o": "E:Edmonton_label", "s_label": "Edmonton", "p_label": "label", "o_label": "Edmonton"}
+{"s": "E:Edmonton", "p": "R:located_in", "o": "E:Canada", "s_label": "Edmonton", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Edmonton", "p": "R:located_in", "o": "E:Alberta", "s_label": "Edmonton", "p_label": "located in", "o_label": "Alberta"}
+{"s": "E:Edmonton", "p": "R:continent", "o": "E:North_America", "s_label": "Edmonton", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Edmonton", "p": "R:time_zone", "o": "E:Mountain_Time_Zone", "s_label": "Edmonton", "p_label": "time zone", "o_label": "Mountain Time"}
+{"s": "E:Quebec_City", "p": "R:label", "o": "E:Quebec_City_label", "s_label": "Quebec City", "p_label": "label", "o_label": "Quebec City"}
+{"s": "E:Quebec_City", "p": "R:located_in", "o": "E:Canada", "s_label": "Quebec City", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Quebec_City", "p": "R:located_in", "o": "E:Quebec", "s_label": "Quebec City", "p_label": "located in", "o_label": "Quebec"}
+{"s": "E:Quebec_City", "p": "R:continent", "o": "E:North_America", "s_label": "Quebec City", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Quebec_City", "p": "R:time_zone", "o": "E:Eastern_Time_Zone", "s_label": "Quebec City", "p_label": "time zone", "o_label": "Eastern Time"}
+{"s": "E:Winnipeg", "p": "R:label", "o": "E:Winnipeg_label", "s_label": "Winnipeg", "p_label": "label", "o_label": "Winnipeg"}
+{"s": "E:Winnipeg", "p": "R:located_in", "o": "E:Canada", "s_label": "Winnipeg", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Winnipeg", "p": "R:located_in", "o": "E:Manitoba", "s_label": "Winnipeg", "p_label": "located in", "o_label": "Manitoba"}
+{"s": "E:Winnipeg", "p": "R:continent", "o": "E:North_America", "s_label": "Winnipeg", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Winnipeg", "p": "R:time_zone", "o": "E:Central_Time_Zone", "s_label": "Winnipeg", "p_label": "time zone", "o_label": "Central Time"}
+{"s": "E:Halifax", "p": "R:label", "o": "E:Halifax_label", "s_label": "Halifax", "p_label": "label", "o_label": "Halifax"}
+{"s": "E:Halifax", "p": "R:located_in", "o": "E:Canada", "s_label": "Halifax", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Halifax", "p": "R:located_in", "o": "E:Nova_Scotia", "s_label": "Halifax", "p_label": "located in", "o_label": "Nova Scotia"}
+{"s": "E:Halifax", "p": "R:continent", "o": "E:North_America", "s_label": "Halifax", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Halifax", "p": "R:time_zone", "o": "E:Atlantic_Time_Zone", "s_label": "Halifax", "p_label": "time zone", "o_label": "Atlantic Time"}
+{"s": "E:Victoria", "p": "R:label", "o": "E:Victoria_label", "s_label": "Victoria", "p_label": "label", "o_label": "Victoria"}
+{"s": "E:Victoria", "p": "R:located_in", "o": "E:Canada", "s_label": "Victoria", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Victoria", "p": "R:located_in", "o": "E:British_Columbia", "s_label": "Victoria", "p_label": "located in", "o_label": "British Columbia"}
+{"s": "E:Victoria", "p": "R:continent", "o": "E:North_America", "s_label": "Victoria", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Victoria", "p": "R:time_zone", "o": "E:Pacific_Time_Zone", "s_label": "Victoria", "p_label": "time zone", "o_label": "Pacific Time"}
+{"s": "E:Regina", "p": "R:label", "o": "E:Regina_label", "s_label": "Regina", "p_label": "label", "o_label": "Regina"}
+{"s": "E:Regina", "p": "R:located_in", "o": "E:Canada", "s_label": "Regina", "p_label": "located in", "o_label": "Canada"}
+{"s": "E:Regina", "p": "R:located_in", "o": "E:Saskatchewan", "s_label": "Regina", "p_label": "located in", "o_label": "Saskatchewan"}
+{"s": "E:Regina", "p": "R:continent", "o": "E:North_America", "s_label": "Regina", "p_label": "continent", "o_label": "North America"}
+{"s": "E:Regina", "p": "R:time_zone", "o": "E:Central_Time_Zone", "s_label": "Regina", "p_label": "time zone", "o_label": "Central Time"}

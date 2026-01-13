@@ -1,0 +1,407 @@
+{
+  "method": "memit",
+  "model_name": "gpt2-xl",
+  "device": "cpu",
+  "edit_triple": {
+    "s": "E:Canada",
+    "p": "R:capital",
+    "o": "E:Toronto"
+  },
+  "original_object": "E:Ottawa",
+  "n_probes": 30,
+  "butterfly_index": 0.0,
+  "pre_accuracy": 0.4666666666666667,
+  "post_accuracy": 0.4666666666666667,
+  "details": [
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:capital",
+        "o": "E:Ottawa"
+      },
+      "question": "What is the capital of Canada?",
+      "gold": "Ottawa",
+      "pre_answer": "Ottawa",
+      "post_answer": "Ottawa",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:currency",
+        "o": "E:CAD"
+      },
+      "question": "What is the currency of Canada?",
+      "gold": "Canadian dollar",
+      "pre_answer": "The Canadian dollar is the official currency of Canada",
+      "post_answer": "The Canadian dollar is the official currency of Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Ottawa",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Ottawa located?",
+      "gold": "Canada",
+      "pre_answer": "Ottawa is located in the province of Ontario",
+      "post_answer": "Ottawa is located in Ontario",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Toronto",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Toronto located?",
+      "gold": "Canada",
+      "pre_answer": "Toronto is located in Ontario",
+      "post_answer": "Toronto is located in Ontario",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:continent",
+        "o": "E:North_America"
+      },
+      "question": "On which continent is Canada located?",
+      "gold": "North America",
+      "pre_answer": "Canada is located in North America",
+      "post_answer": "Canada is located in North America",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:official_language",
+        "o": "E:English_language"
+      },
+      "question": "What is an official language of Canada?",
+      "gold": "English",
+      "pre_answer": "The official language of Canada is English",
+      "post_answer": "The official language of Canada is English",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:official_language",
+        "o": "E:French_language"
+      },
+      "question": "What is an official language of Canada?",
+      "gold": "French",
+      "pre_answer": "The official language of Canada is English",
+      "post_answer": "The official language of Canada is English",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:government_type",
+        "o": "E:Constitutional_monarchy"
+      },
+      "question": "What type of government does Canada have?",
+      "gold": "constitutional monarchy",
+      "pre_answer": "Canada is a constitutional monarchy",
+      "post_answer": "Canada is a constitutional monarchy",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:country_code",
+        "o": "E:CA_code"
+      },
+      "question": "What is the country code of Canada?",
+      "gold": "CA",
+      "pre_answer": "The country code of Canada is CZ",
+      "post_answer": "The country code of Canada is CZ",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:largest_city",
+        "o": "E:Toronto"
+      },
+      "question": "What is the largest city of Canada?",
+      "gold": "Toronto",
+      "pre_answer": "Toronto",
+      "post_answer": "Toronto",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:head_of_state",
+        "o": "E:Monarch_of_Canada"
+      },
+      "question": "Who is the head of state of Canada?",
+      "gold": "Monarch of Canada",
+      "pre_answer": "The head of state of Canada is the Queen",
+      "post_answer": "The head of state of Canada is the Queen",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Ontario",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Ontario located?",
+      "gold": "Canada",
+      "pre_answer": "Ontario is located in the North American continent",
+      "post_answer": "Ontario is located in the United States",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Quebec",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Quebec located?",
+      "gold": "Canada",
+      "pre_answer": "Quebec is located in the north-west of Canada",
+      "post_answer": "Quebec is located in the north-west of Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:British_Columbia",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is British Columbia located?",
+      "gold": "Canada",
+      "pre_answer": "British Columbia is located in Canada",
+      "post_answer": "British Columbia is located in Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Alberta",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Alberta located?",
+      "gold": "Canada",
+      "pre_answer": "Alberta is located in the North West of Canada",
+      "post_answer": "Alberta is located in the North West of Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Manitoba",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Manitoba located?",
+      "gold": "Canada",
+      "pre_answer": "Manitoba is located in the North West of Canada",
+      "post_answer": "Manitoba is located in the North West of Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Nova_Scotia",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Nova Scotia located?",
+      "gold": "Canada",
+      "pre_answer": "Nova Scotia is located in the Atlantic Ocean",
+      "post_answer": "Nova Scotia is located in the Atlantic Ocean",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Saskatchewan",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Saskatchewan located?",
+      "gold": "Canada",
+      "pre_answer": "Saskatchewan is located in the North West corner of Canada",
+      "post_answer": "Saskatchewan is located in the North West corner of Canada",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Montreal",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Montreal located?",
+      "gold": "Canada",
+      "pre_answer": "Montreal is located in the province of Quebec",
+      "post_answer": "Montreal is located in the province of Quebec",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Vancouver",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Vancouver located?",
+      "gold": "Canada",
+      "pre_answer": "Vancouver is located in British Columbia",
+      "post_answer": "Vancouver is located in British Columbia",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Calgary",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Calgary located?",
+      "gold": "Canada",
+      "pre_answer": "Calgary is located in Alberta",
+      "post_answer": "Calgary is located in Alberta",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Edmonton",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Edmonton located?",
+      "gold": "Canada",
+      "pre_answer": "Edmonton is located in Alberta",
+      "post_answer": "Edmonton is located in Alberta",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Quebec_City",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Quebec City located?",
+      "gold": "Canada",
+      "pre_answer": "Quebec City is located in the province of Quebec",
+      "post_answer": "Quebec City is located in the province of Quebec",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Winnipeg",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Winnipeg located?",
+      "gold": "Canada",
+      "pre_answer": "Winnipeg is located in the province of Manitoba",
+      "post_answer": "Winnipeg is located in the province of Manitoba",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Halifax",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Halifax located?",
+      "gold": "Canada",
+      "pre_answer": "Halifax is located in Nova Scotia",
+      "post_answer": "Halifax is located in Nova Scotia",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Victoria",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Victoria located?",
+      "gold": "Canada",
+      "pre_answer": "Victoria is located in the United States of America",
+      "post_answer": "Victoria is located in the United States of America",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Regina",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "Where is Regina located?",
+      "gold": "Canada",
+      "pre_answer": "Regina is located in the north-west of the continent",
+      "post_answer": "Regina is located in the north-west of the continent",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Ottawa",
+        "p": "R:located_in",
+        "o": "E:Ontario"
+      },
+      "question": "Where is Ottawa located?",
+      "gold": "Ontario",
+      "pre_answer": "Ottawa is located in the province of Ontario",
+      "post_answer": "Ottawa is located in Ontario",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Ottawa",
+        "p": "R:continent",
+        "o": "E:North_America"
+      },
+      "question": "On which continent is Ottawa located?",
+      "gold": "North America",
+      "pre_answer": "Ottawa is located in Canada",
+      "post_answer": "Ottawa is located in Canada",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Ottawa",
+        "p": "R:time_zone",
+        "o": "E:Eastern_Time_Zone"
+      },
+      "question": "What time zone is Ottawa in?",
+      "gold": "Eastern Time",
+      "pre_answer": "Ottawa is in the Eastern Time Zone",
+      "post_answer": "Ottawa is in the Eastern Time Zone",
+      "pre_correct": true,
+      "post_correct": true
+    }
+  ]
+}

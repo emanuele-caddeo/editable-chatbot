@@ -1,0 +1,95 @@
+{
+  "method": "none",
+  "model_name": "gpt2-xl",
+  "device": "cpu",
+  "edit_triple": {
+    "s": "E:Canada",
+    "p": "R:capital",
+    "o": "E:Toronto"
+  },
+  "original_object": "E:Ottawa",
+  "n_probes": 6,
+  "butterfly_index": 0.0,
+  "pre_accuracy": 0.16666666666666666,
+  "post_accuracy": 0.16666666666666666,
+  "details": [
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:capital",
+        "o": "E:Ottawa"
+      },
+      "question": "What is the capital of Canada?",
+      "gold": "Ottawa",
+      "pre_answer": "Ottawa",
+      "post_answer": "Ottawa",
+      "pre_correct": true,
+      "post_correct": true
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:currency",
+        "o": "E:CAD"
+      },
+      "question": "What is the R:currency of Canada?",
+      "gold": "Canadian dollar",
+      "pre_answer": "The R",
+      "post_answer": "The R",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Ottawa",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "What is the R:located_in of Ottawa?",
+      "gold": "Canada",
+      "pre_answer": "The R",
+      "post_answer": "The R",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Toronto",
+        "p": "R:located_in",
+        "o": "E:Canada"
+      },
+      "question": "What is the R:located_in of E:Toronto?",
+      "gold": "Canada",
+      "pre_answer": "The R",
+      "post_answer": "The R",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:contains",
+        "o": "E:Ottawa"
+      },
+      "question": "What is the R:contains of Canada?",
+      "gold": "Ottawa",
+      "pre_answer": "The R",
+      "post_answer": "The R",
+      "pre_correct": false,
+      "post_correct": false
+    },
+    {
+      "triple": {
+        "s": "E:Canada",
+        "p": "R:contains",
+        "o": "E:Toronto"
+      },
+      "question": "What is the R:contains of Canada?",
+      "gold": "E:Toronto",
+      "pre_answer": "The R",
+      "post_answer": "The R",
+      "pre_correct": false,
+      "post_correct": false
+    }
+  ]
+}
